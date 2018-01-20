@@ -29,6 +29,7 @@ else
 fi
 PG_VERS="9.6 10"
 CUDA_VERS="9.1"
+SPECDIR=`rpmbuild -E %{_specdir}`
 SRCDIR=`rpmbuild -E %{_sourcedir}`
 RPMDIR=`rpmbuild -E %{_rpmdir}`
 
@@ -40,7 +41,8 @@ rm -rf ${RPMDIR}
 cp -f heterodb-swdc.repo RPM-GPG-KEY-HETERODB ${SRCDIR}
 rpmbuild -ba heterodb-swdc.spec
 
-exit 1
+# pgstrom-kmod package
+
 
 # pgstrom-PGxx package
 make -C pg-strom tarball
@@ -48,19 +50,15 @@ cp pg-strom/pg_strom-${STROM_VERSION}.tar.gz ${SRCDIR}
 (cd nvme-strom; git archive --format=tar.gz --prefix=nvme_strom-${STROM_VERSION}/ \
                             -o ${SRCDIR}/nvme_strom-${STROM_VERSION}.tar.gz \
                             HEAD kmod utils)
-
-for cv in $CUDA_VERS;
+for pv in $PG_VERS;
 do
-  for pv in $PG_VERS;
-  do
-    rpmbuild -D "strom_version ${STROM_VERSION}" \
-             -D "strom_release ${STROM_RELEASE}" \
-             -D "pgsql_version ${pv}" \
-             -D "cuda_version  ${cv}" \
-             -D "strom_commit  ${STROM_COMMIT}" \
-             -D "nvme_commit   ${NVME_COMMIT}"  \
-             -ba pgstrom-v2.spec
-  done
+  cp pgstrom-v2.spec ${SPECDIR}/pgstrom-PG${pv}.spec
+  rpmbuild -D "strom_version ${STROM_VERSION}" \
+           -D "strom_release ${STROM_RELEASE}" \
+           -D "pgsql_version ${pv}" \
+           -D "strom_commit  ${STROM_COMMIT}" \
+           -D "nvme_commit   ${NVME_COMMIT}"  \
+           -ba ${SPECDIR}/pgstrom-PG${pv}.spec
 done
 
 echo $STROM_COMMIT

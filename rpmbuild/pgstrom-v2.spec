@@ -1,7 +1,7 @@
 %define pgsql_pkgver   %(echo %{pgsql_version} | sed 's/\\.//g')
 %define cuda_pkgver    %(echo %{cuda_version} | sed 's/\\./-/g')
 
-Name: pgstrom-PG%{pgsql_pkgver}-cuda%{cuda_version}
+Name: pgstrom-PG%{pgsql_pkgver}
 Version: %{strom_version}
 Release: %{strom_release}%{?dist}
 Summary: PG-Strom extension module for PostgreSQL
@@ -9,22 +9,20 @@ Group: Applications/Databases
 License: GPL 2.0
 URL: https://github.com/heterodb/pg-strom
 Source0: pg_strom-%{strom_version}.tar.gz
-BuildRequires: postgresql%{pgsql_pkgver}           >= 9.6.0
-BuildRequires: postgresql%{pgsql_pkgver}-devel     >= 9.6.0
-BuildRequires: cuda-misc-headers-%{cuda_pkgver}    >= 7.5
-BuildRequires: cuda-nvrtc-dev-%{cuda_pkgver}       >= 7.5
+BuildRequires: postgresql%{pgsql_pkgver}        >= 9.6.0
+BuildRequires: postgresql%{pgsql_pkgver}-devel  >= 9.6.0
+BuildRequires: cuda                             >= 8.0
 Requires: nvidia-kmod
-Requires: cuda-nvrtc-9-1-%{cuda_pkgver}            = %{cuda_version}
-Requires: cuda-nvcc-%{cuda_pkgver}                 = %{cuda_version}
-Requires: cuda-cudart-dev-%{cuda_pkgver}           = %{cuda_version}
-Requires: cuda-curand-dev-%{cuda_pkgver}           = %{cuda_version}
+Requires: cuda                                  >= 8.0
+Requires: postgresql%{pgsql_pkgver}
+Requires: postgresql%{pgsql_pkgver}-server
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
 %define __pg_config     /usr/pgsql-%{pgsql_version}/bin/pg_config
 %define __pkglibdir     %(%{__pg_config} --pkglibdir)
 %define __pkgbindir     %(%{__pg_config} --bindir)
 %define __pkgsharedir   %(%{__pg_config} --sharedir)
-%define __cuda_path     /usr/local/cuda-%{cuda_version}
+%define __cuda_path     /usr/local/cuda
 
 %description
 PG-Strom is an extension for PostgreSQL, to accelerate analytic queries
@@ -62,6 +60,8 @@ ldconfig
 %{__pkgbindir}/kfunc_info
 %{__pkgsharedir}/extension/*
 %config(noreplace) /etc/ld.so.conf.d/pgstrom-cuda-lib64.conf
+
+%files kmod
 
 %changelog
 * Sat Jan 20 2018 KaiGai Kohei <kaigai@heterodb.com>
