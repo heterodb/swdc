@@ -120,7 +120,7 @@ do
   if [ "`git ls-files docs/yum/${DISTRO}-${ARCH}/${RPMFILE} | wc -l`" -gt 0 ] && \
      [ "`git ls-files docs/yum/${DISTRO}-debuginfo/${DEBUGINFO} | wc -l`" -gt 0 ]
   then
-    echo; #continue;
+    continue;
   fi
   # OK, build a package
   (cd nvme-strom; git archive --format=tar.gz \
