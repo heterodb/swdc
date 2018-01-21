@@ -1,6 +1,6 @@
 Name: nvme-strom
 Version: %{nvme_version}
-Release: %{nvme_release}%{!?dist}
+Release: %{nvme_release}%{?dist}
 Summary: Linux kernel module for SSD-to-GPU Direct SQL Execution
 Group: Applications/Databases
 License: TBD

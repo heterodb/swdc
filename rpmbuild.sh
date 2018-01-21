@@ -6,6 +6,7 @@
 # local modification, are cloned under the '<gitroot>/rpmbuild' directory.
 # ----------------------------------------------------------------
 cd `dirname $0`
+git clean -fdx
 
 STROM_DIR="pg-strom"
 NVME_DIR="nvme-strom"
@@ -62,8 +63,10 @@ mkdir -p ${SRCDIR}
 rm -rf ${RPMDIR}/*
 
 ARCH="noarch"
-RPMFILE=`rpmspec -q files/heterodb-swdc.spec`.rpm
-SRPMFILE=`echo $RPMFILE | sed "s/\.$ARCH\.rpm/.src.rpm/g"`
+SWDC_VERSION=`rpmspec --qf %{version} -q files/heterodb-swdc.spec`
+SWDC_RELEASE=`rpmspec --qf %{release} -q files/heterodb-swdc.spec`
+RPMFILE="heterodb-swdc-${SWDC_VERSION}-${SWDC_RELEASE}.${ARCH}.rpm"
+SRPMFILE="heterodb-swdc-${SWDC_VERSION}-${SWDC_RELEASE}.src.rpm"
 if [ "`git ls-files docs/yum/${DISTRO}-${ARCH}/${RPMFILE} | wc -l`" -eq 0 ] && \
    [ "`git ls-files docs/yum/${DISTRO}-source/${SRPMFILE} | wc -l`" -eq 0 ];
 then
@@ -82,8 +85,8 @@ then
     fi
     cp -f "$SRPMDIR/${SRPMFILE}"       "docs/yum/${DISTRO}-source/" || exit 1
     cp -f "$RPMDIR/${ARCH}/${RPMFILE}" "docs/yum/${DISTRO}-${ARCH}/" || exit 1
-    git add "docs/yum/${DISTRO}-source/" \
-            "docs/yum/${DISTRO}-${ARCH}/" || exit 1
+    git add "docs/yum/${DISTRO}-source/${SRPMFILE}" \
+            "docs/yum/${DISTRO}-${ARCH}/${RPMFILE}" || exit 1
     ANY_NEW_PACKAGES=1
   else
     echo "RPM files missing. Build failed?"
@@ -108,16 +111,17 @@ do
   else
     NVME_TARBALL="${NVME_VERSION}-${NVME_RELEASE}"
   fi
-  RPMFILE="nvme-strom-${NVME_VERSION}-${NVME_RELEASE}.${ARCH}.rpm"
-# -- right now, we don't distribute source code of nvme-strom.ko
-#  SRPMFILE="nvme-strom-${NVME_VERSION}-${NVME_RELEASE}.src.rpm"
-  DEBUGINFO="nvme-strom-debuginfo-${NVME_VERSION}-${NVME_RELEASE}.${ARCH}.rpm"
+  RPMFILE=`rpmspec -D "nvme_version ${NVME_VERSION}" \
+                   -D "nvme_release ${NVME_RELEASE}" \
+                   --rpms -q files/nvme-strom.spec | grep -v debuginfo`.rpm
+  DEBUGINFO=`rpmspec -D "nvme_version ${NVME_VERSION}" \
+                     -D "nvme_release ${NVME_RELEASE}" \
+                     --rpms -q files/nvme-strom.spec | grep debuginfo`.rpm
   if [ "`git ls-files docs/yum/${DISTRO}-${ARCH}/${RPMFILE} | wc -l`" -gt 0 ] && \
      [ "`git ls-files docs/yum/${DISTRO}-debuginfo/${DEBUGINFO} | wc -l`" -gt 0 ]
   then
-    continue;
+    echo; #continue;
   fi
-
   # OK, build a package
   (cd nvme-strom; git archive --format=tar.gz \
                               --prefix=nvme-strom-${NVME_TARBALL}/ \
@@ -170,9 +174,18 @@ do
   for pv in $PGSQL_VERSIONS
   do
     PVNUM=`echo $pv | sed 's/\.//g'`
-    RPMFILE="pg-strom-PG${PVNUM}-${STROM_VERSION}-${STROM_RELEASE}${EXTRA}.${ARCH}.rpm"
-    SRPMFILE="pg-strom-PG${PVNUM}-${STROM_VERSION}-${STROM_RELEASE}${EXTRA}.src.rpm"
-    DEBUGINFO="pg-strom-PG${PVNUM}-debuginfo-${STROM_VERSION}-${STROM_RELEASE}${EXTRA}.${ARCH}.rpm"
+    RPMFILE=`rpmspec -D "strom_version ${STROM_VERSION}" \
+                     -D "strom_release ${STROM_RELEASE}" \
+                     -D "pgsql_version ${pv}" \
+                     --rpms -q files/pgstrom-v2.spec | grep -v debuginfo`.rpm
+    DEBUGINFO=`rpmspec -D "strom_version ${STROM_VERSION}" \
+                       -D "strom_release ${STROM_RELEASE}" \
+                       -D "pgsql_version ${pv}" \
+                       --rpms -q files/pgstrom-v2.spec | grep debuginfo`.rpm
+    SRPMFILE=`rpmspec -D "strom_version ${STROM_VERSION}" \
+                      -D "strom_release ${STROM_RELEASE}" \
+                      -D "pgsql_version ${pv}" \
+                      --srpm -q files/pgstrom-v2.spec | sed "s/\\.${ARCH}\\\$/.src/g"`.rpm
     if [ "`git ls-files docs/yum/${DISTRO}-${ARCH}/${RPMFILE} | wc -l`" -gt 0 ] && \
        [ "`git ls-files docs/yum/${DISTRO}-debuginfo/${DEBUGINFO} | wc -l`" -gt 0 ] && \
        [ "`git ls-files docs/yum/${DISTRO}-source/${SRPMFILE} | wc -l`" -gt 0 ];
@@ -224,32 +237,63 @@ if [ $ANY_NEW_PACKAGES -ne 0 ]; then
   # update yum repository
   for d in docs/yum/*/repodata;
   do
-    createrepo --update `dirname $d`
+    createrepo --simple-md-filenames --update `dirname $d`
   done
 
+  HTML=`mktemp`
+  cat<<EOF>>$HTML
+<html>
+<head>
+<title>HeteroDB Software Distribution Center</title>
+</head>
+<body>
+<h1>HeteroDB Software Distribution Center</h1>
+<hr>
+<h2>yum repository configurations</h2>
+<ul>
+EOF
   # update index file (heterodb-swdc)
-  LIST=`git ls-files 'docs/yum/*-noarch/heterodb-swdc-*.noarch.rpm'`
-  HTML1=""
-  for x in $LIST
+  for x in `ls docs/yum/*-noarch/heterodb-swdc-*.noarch.rpm`
   do
     ALINK=`echo $x | sed 's/^docs/./g'`
     FNAME=`basename $x`
-    HTML1+="<li><a href=\"$ALINK\">$FNAME</a></li>"
+    echo "<li><a href=\"$ALINK\">$FNAME</a></li>" >> $HTML
   done
+
+  (echo "</ul>"
+   echo "<h2>PG-Strom Source Tarball</h2>"
+   echo "<ul>") >> $HTML
 
   # update index file (pg-strom)
-  LIST=`git ls-files 'docs/tgz/pg-strom-*.tar.gz'`
-  HTML2=""
-  for x in $LIST
+  for x in `ls docs/tgz/pg-strom-*.tar.gz`
   do
     ALINK=`echo $x | sed 's/^docs/./g'`
     FNAME=`basename $x`
-    HTML2+="<li><a href=\"$ALINK\">$FNAME</a></li>"
+    echo "<li><a href=\"$ALINK\">$FNAME</a></li>" >> $HTML
+  done
+  (echo "</ul>"
+   echo "<h2>RPM Files</h2>"
+   echo "<ul>") >> $HTML
+
+  for dir in `ls -dr docs/yum/*`
+  do
+    (echo "<li><b>`basename $dir`</b>"
+     echo "  <ul>") >> $HTML
+    for x in `ls $dir/*.rpm`
+    do
+      ALINK=`echo $x | sed 's/^docs/./g'`
+      FNAME=`basename $x`
+      echo "  <li><a href=\"$ALINK\">$FNAME</a></li>" >> $HTML
+    done
+    (echo "  </ul>"
+     echo "</li>") >> $HTML
   done
 
-  cat files/index.src.html | \
-    sed -e "s|%%%HETERODB-SWDC-RPMS%%%|$HTML1|g" \
-        -e "s|%%%PGSTROM-SOURCE-TARBALL%%%|$HTML2|g" > docs/index.html
+  (echo "</ul>"
+   echo "</body>"
+   echo "</html>") >> $HTML
+  cp $HTML docs/index.html
+  rm $HTML
 fi
 exit 0
 
