@@ -177,8 +177,7 @@ do
        [ "`git ls-files docs/yum/${DISTRO}-debuginfo/${DEBUGINFO} | wc -l`" -gt 0 ] && \
        [ "`git ls-files docs/yum/${DISTRO}-source/${SRPMFILE} | wc -l`" -gt 0 ];
     then
-echo
-#      continue;
+      continue;
     fi
     # OK, build a package
     make -C pg-strom tarball PGSTROM_VERSION=$sv
@@ -235,9 +234,7 @@ if [ $ANY_NEW_PACKAGES -ne 0 ]; then
   do
     ALINK=`echo $x | sed 's/^docs/./g'`
     FNAME=`basename $x`
-    FTIME=`git --no-pager log -n1 --format=%ci $x`
-    FSIZE=`stat -c %s $x`
-    HTML1+="<li><a href=\"$ALINK\">$FNAME</a> ........ ($FSIZE bytes, $FTIME)</li>"
+    HTML1+="<li><a href=\"$ALINK\">$FNAME</a></li>"
   done
 
   # update index file (pg-strom)
@@ -247,9 +244,7 @@ if [ $ANY_NEW_PACKAGES -ne 0 ]; then
   do
     ALINK=`echo $x | sed 's/^docs/./g'`
     FNAME=`basename $x`
-    FTIME=`git --no-pager log -n1 --format=%ci $x`
-    FSIZE=`stat -c %s $x`
-    HTML2+="<li><a href=\"$ALINK\">$FNAME</a> ........ ($FSIZE bytes, $FTIME)</li>"
+    HTML2+="<li><a href=\"$ALINK\">$FNAME</a></li>"
   done
 
   cat files/index.src.html | \
