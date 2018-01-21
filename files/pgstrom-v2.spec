@@ -16,6 +16,7 @@ Requires: cuda                                  >= 8.0
 Requires: postgresql%{pgsql_pkgver}
 Requires: postgresql%{pgsql_pkgver}-server
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
+AutoReqProv: no
 
 %define __pg_config     /usr/pgsql-%{pgsql_version}/bin/pg_config
 %define __pkglibdir     %(%{__pg_config} --pkglibdir)
@@ -33,14 +34,10 @@ towards large data set using the capability of GPU devices.
 %build
 rm -rf %{buildroot}
 %{__make} -j 8 CUDA_PATH=%{__cuda_path} PG_CONFIG=%{__pg_config}
-echo %{__cuda_path}/lib64 > pgstrom-cuda-lib64.conf
 
 %install
 rm -rf %{buildroot}
 %{__make} CUDA_PATH=%{__cuda_path} PG_CONFIG=%{__pg_config} DESTDIR=%{buildroot} install
-
-# config to use CUDA/NVRTC
-%{__install} -Dp pgstrom-cuda-lib64.conf %{buildroot}/etc/ld.so.conf.d/pgstrom-cuda-lib64.conf
 
 %clean
 rm -rf %{buildroot}
@@ -58,7 +55,6 @@ ldconfig
 %{__pkgbindir}/gpuinfo
 %{__pkgbindir}/kfunc_info
 %{__pkgsharedir}/extension/*
-%config(noreplace) /etc/ld.so.conf.d/pgstrom-cuda-lib64.conf
 
 %changelog
 * Sat Jan 20 2018 KaiGai Kohei <kaigai@heterodb.com>
