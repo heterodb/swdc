@@ -1,14 +1,13 @@
 %define pgsql_pkgver   %(echo %{pgsql_version} | sed 's/\\.//g')
-%define cuda_pkgver    %(echo %{cuda_version} | sed 's/\\./-/g')
 
-Name: pgstrom-PG%{pgsql_pkgver}
+Name: pg-strom-PG%{pgsql_pkgver}
 Version: %{strom_version}
 Release: %{strom_release}%{?dist}
 Summary: PG-Strom extension module for PostgreSQL
 Group: Applications/Databases
 License: GPL 2.0
 URL: https://github.com/heterodb/pg-strom
-Source0: pg_strom-%{strom_version}.tar.gz
+Source0: %{strom_tarball}.tar.gz
 BuildRequires: postgresql%{pgsql_pkgver}        >= 9.6.0
 BuildRequires: postgresql%{pgsql_pkgver}-devel  >= 9.6.0
 BuildRequires: cuda                             >= 8.0
@@ -29,7 +28,7 @@ PG-Strom is an extension for PostgreSQL, to accelerate analytic queries
 towards large data set using the capability of GPU devices.
 
 %prep
-%setup -q -n pg_strom-%{strom_version}
+%setup -q -n %{strom_tarball}
 
 %build
 rm -rf %{buildroot}
@@ -60,8 +59,6 @@ ldconfig
 %{__pkgbindir}/kfunc_info
 %{__pkgsharedir}/extension/*
 %config(noreplace) /etc/ld.so.conf.d/pgstrom-cuda-lib64.conf
-
-%files kmod
 
 %changelog
 * Sat Jan 20 2018 KaiGai Kohei <kaigai@heterodb.com>

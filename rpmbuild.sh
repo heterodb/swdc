@@ -9,7 +9,7 @@ cd `dirname $0`
 
 STROM_DIR="pg-strom"
 NVME_DIR="nvme-strom"
-PGSQL_VERS="9.6 10"
+PGSQL_VERSIONS="9.6 10"
 
 if rpmbuild -E '%{dist}' | grep -q '^\.el7'; then
   DISTRO="rhel7"
@@ -17,6 +17,8 @@ else
   echo "unknown Linux distribution"
   exit 1
 fi
+# For RPM signing
+alias _rpmsign="rpmsign -D '_gpg_name HeteroDB,Inc'"
 
 # ensure Git repository exists and up-to-date, with no local changes
 test -e ${STROM_DIR}/.git || (echo "no pg-strom git repository"; exit 1)
@@ -29,12 +31,10 @@ if [ `(cd $NVME_DIR; git diff) | wc -l` -lt 0 ]; then
   echo "$NVME_DIR has local changes"
   exit 1
 fi
-#(cd pg-strom; git pull)  || (echo "failed on git-pull (pg-strom)"; exit 1)
-#(cd nvme-strom; git pull)  || (echo "failed on git-pull (nvme-strom)"; exit 1)
+(cd pg-strom; git pull)  || (echo "failed on git-pull (pg-strom)"; exit 1)
+(cd nvme-strom; git pull)  || (echo "failed on git-pull (nvme-strom)"; exit 1)
 
 # get version information
-STROM_COMMIT=`cd pg-strom; git log | head -1 | awk '{print $2}'`
-NVME_COMMIT=`cd nvme-strom; git log | head -1 | awk '{print $2}'`
 STROM_VERSION=`cat pg-strom/Makefile |     \
                grep '^PGSTROM_VERSION=' |  \
                sed 's/^PGSTROM_VERSION=//g'`
@@ -44,6 +44,7 @@ else
   STROM_RELEASE="`date +%y%m%d`"
 fi
 
+STROM_VERSIONS_LIST=`cd pg-strom; git tag -l | grep '^v[0-9]*\.[0-9]*\(\-[0-9]\+\)\?$'`
 NVME_VERSIONS_LIST=`cd nvme-strom; git tag -l | grep '^v[0-9]*\.[0-9]*\(\-[0-9]\+\)\?$'`
 
 # get rpmbuild working directory
@@ -69,8 +70,14 @@ then
   SPECFILE=${SPECDIR}/heterodb-swdc.spec
 
   rpmbuild -ba ${SPECFILE} || (echo "filed on rpmbuild"; exit 1)
-  if [ -e "$SRPMDIR/${SRPMFILE}" -a -e "$RPMDIR/${ARCH}/${RPMFILE}" ];
+  if [ -e "$SRPMDIR/${SRPMFILE}" -a \
+       -e "$RPMDIR/${ARCH}/${RPMFILE}" ];
   then
+    if [ -x ~/rpmsign.sh ];
+    then
+      ~/rpmsign.sh "$SRPMDIR/${SRPMFILE}" || exit 1
+      ~/rpmsign.sh "$RPMDIR/${ARCH}/${RPMFILE}" || exit 1
+    fi
     cp -f "$SRPMDIR/${SRPMFILE}"       "docs/yum/${DISTRO}-source/" || exit 1
     cp -f "$RPMDIR/${ARCH}/${RPMFILE}" "docs/yum/${DISTRO}-${ARCH}/" || exit 1
     git add "docs/yum/${DISTRO}-source/" \
@@ -80,7 +87,6 @@ then
     exit 1
   fi
 fi
-exit 
 
 #
 # Build pgstrom-kmod package
@@ -95,12 +101,15 @@ do
   NVME_RELEASE=`echo $v | sed -e 's/v//g' -e 's/-/ /g' | awk '{print $2}'`
   if [ -z "$NVME_RELEASE" ]; then
     NVME_RELEASE=1
+    NVME_TARBALL="${NVME_VERSION}"
+  else
+    NVME_TARBALL="${NVME_VERSION}-${NVME_RELEASE}"
   fi
-  RPMFILE="pgstrom-kmod-${NVME_VERSION}-${NVME_RELEASE}.${ARCH}.rpm"
-  SRPMFILE="pgstrom-kmod-${NVME_VERSION}-${NVME_RELEASE}.src.rpm"
-  DEBUGINFO="pgstrom-kmod-debuginfo-${NVME_VERSION}-${NVME_RELEASE}.${ARCH}.rpm"
-  if [ "`git ls-files docs/yum/${DISTRO}-source/${SRPMFILE} | wc -l`" -gt 0 ] && \
-     [ "`git ls-files docs/yum/${DISTRO}-${ARCH}/${RPMFILE} | wc -l`" -gt 0 ] && \
+  RPMFILE="nvme-strom-${NVME_VERSION}-${NVME_RELEASE}.${ARCH}.rpm"
+# -- right now, we don't distribute source code of nvme-strom.ko
+#  SRPMFILE="nvme-strom-${NVME_VERSION}-${NVME_RELEASE}.src.rpm"
+  DEBUGINFO="nvme-strom-debuginfo-${NVME_VERSION}-${NVME_RELEASE}.${ARCH}.rpm"
+  if [ "`git ls-files docs/yum/${DISTRO}-${ARCH}/${RPMFILE} | wc -l`" -gt 0 ] && \
      [ "`git ls-files docs/yum/${DISTRO}-debuginfo/${DEBUGINFO} | wc -l`" -gt 0 ]
   then
     continue;
@@ -108,24 +117,29 @@ do
 
   # OK, build a package
   (cd nvme-strom; git archive --format=tar.gz \
-                              --prefix=nvme_strom-${v}/ \
-                              -o ${SRCDIR}/nvme_strom-${v}.tar.gr \
+                              --prefix=nvme-strom-${NVME_TARBALL}/ \
+                              -o ${SRCDIR}/nvme-strom-${NVME_TARBALL}.tar.gz \
                               $v kmod utils)
-  cp -f files/pgstrom-kmod.spec ${SPECDIR}
+  cp -f files/nvme-strom.spec ${SPECDIR}
+  cat files/nvme-strom.dkms.conf | \
+    sed -e "s/%%NVME_STROM_VERSION%%/${NVME_VERSION}/g" > ${SRCDIR}/dkms.conf
 
   rpmbuild -D "nvme_version ${NVME_VERSION}" \
            -D "nvme_release ${NVME_RELEASE}" \
-           -ba ${SPECDIR}/pgstrom-kmod.spec || (echo "rpmbuild failed"; exit 1)
+           -D "nvme_tarball ${NVME_TARBALL}" \
+           -ba ${SPECDIR}/nvme-strom.spec || (echo "rpmbuild failed"; exit 1)
 
-  if [ -e "$SRPMDIR/${SRPMFILE}" -a \
-       -e "$RPMDIR/${ARCH}/${RPMFILE}" -a \
+  if [ -e "$RPMDIR/${ARCH}/${RPMFILE}" -a \
        -e "$RPMDIR/${ARCH}/${DEBUGINFO}" ];
   then
-    cp -f "$SRPMDIR/${SRPMFILE}"         "docs/yum/${DISTRO}-source/"    || exit 1
+    if [ -x ~/rpmsign.sh ];
+    then
+      ~/rpmsign.sh "$RPMDIR/${ARCH}/${RPMFILE}" || exit 1
+      ~/rpmsign.sh "$RPMDIR/${ARCH}/${DEBUGINFO}" || exit 1
+    fi
     cp -f "$RPMDIR/${ARCH}/${RPMFILE}"   "docs/yum/${DISTRO}-${ARCH}/"   || exit 1
     cp -f "$RPMDIR/${ARCH}/${DEBUGINFO}" "docs/yum/${DISTRO}-debuginfo/" || exit 1
-    git add "docs/yum/${DISTRO}-source/${SRPMFILE}"  \
-            "docs/yum/${DISTRO}-${ARCH}/${RPMFILE}"  \
+    git add "docs/yum/${DISTRO}-${ARCH}/${RPMFILE}"  \
             "docs/yum/${DISTRO}-debuginfo/${DEBUGINFO}" || exit 1
   else
     echo "RPM File Missing. Build Failed?"
@@ -133,25 +147,65 @@ do
   fi
 done
 
-
-
-
-# pgstrom-PGxx package
-make -C pg-strom tarball
-cp pg-strom/pg_strom-${STROM_VERSION}.tar.gz ${SRCDIR}
-(cd nvme-strom; git archive --format=tar.gz --prefix=nvme_strom-${STROM_VERSION}/ \
-                            -o ${SRCDIR}/nvme_strom-${STROM_VERSION}.tar.gz \
-                            HEAD kmod utils)
-for pv in $PG_VERS;
+#
+# Build pgstrom-PGxx packages
+# -----------------------------
+ARCH=`uname -m`
+for sv in $STROM_VERSIONS_LIST
 do
-  cp pgstrom-v2.spec ${SPECDIR}/pgstrom-PG${pv}.spec
-  rpmbuild -D "strom_version ${STROM_VERSION}" \
-           -D "strom_release ${STROM_RELEASE}" \
-           -D "pgsql_version ${pv}" \
-           -D "strom_commit  ${STROM_COMMIT}" \
-           -D "nvme_commit   ${NVME_COMMIT}"  \
-           -ba ${SPECDIR}/pgstrom-PG${pv}.spec
-done
+  STROM_VERSION=`echo $sv | sed -e 's/^v//g' -e 's/\-/ /g' | awk '{print $1}'`
+  STROM_RELEASE=`echo $sv | sed -e 's/^v//g' -e 's/\-/ /g' | awk '{print $2}'`
+  if [ -z "$STROM_RELEASE" ]; then
+    STROM_RELEASE=1
+    STROM_TARBALL="pg-strom-${STROM_VERSION}"
+  else
+    STROM_TARBALL="pg-strom-${STROM_VERSION}-${STROM_RELEASE}"
+  fi
+  EXTRA=`rpmbuild -E '%{dist}'`
 
-echo $STROM_COMMIT
-echo $NVME_COMMIT
+  for pv in $PGSQL_VERSIONS
+  do
+    PVNUM=`echo $pv | sed 's/\.//g'`
+    RPMFILE="pg-strom-PG${PVNUM}-${STROM_VERSION}-${STROM_RELEASE}${EXTRA}.${ARCH}.rpm"
+    SRPMFILE="pg-strom-PG${PVNUM}-${STROM_VERSION}-${STROM_RELEASE}${EXTRA}.src.rpm"
+    DEBUGINFO="pg-strom-PG${PVNUM}-debuginfo-${STROM_VERSION}-${STROM_RELEASE}${EXTRA}.${ARCH}.rpm"
+    if [ "`git ls-files docs/yum/${DISTRO}-${ARCH}/${RPMFILE} | wc -l`" -gt 0 ] && \
+       [ "`git ls-files docs/yum/${DISTRO}-debuginfo/${DEBUGINFO} | wc -l`" -gt 0 ] && \
+       [ "`git ls-files docs/yum/${DISTRO}-source/${SRPMFILE} | wc -l`" -gt 0 ];
+    then
+      continue;
+    fi
+    # OK, build a package
+    make -C pg-strom tarball PGSTROM_VERSION=$sv
+    cp -f "pg-strom/${STROM_TARBALL}.tar.gz" ${SRCDIR}
+    cp -f "files/pgstrom-v2.spec" "${SPECDIR}/pgstrom-PG${PVNUM}.spec"
+    rpmbuild -D "strom_version ${STROM_VERSION}" \
+             -D "strom_release ${STROM_RELEASE}" \
+             -D "strom_tarball ${STROM_TARBALL}" \
+             -D "pgsql_version ${pv}" \
+             -ba ${SPECDIR}/pgstrom-PG${PVNUM}.spec || (echo "rpmbuild failed"; exit 1)
+    echo "$SRPMDIR/${SRPMFILE}"
+    echo "$RPMDIR/${ARCH}/${RPMFILE}"
+    echo "$RPMDIR/${ARCH}/${DEBUGINFO}"
+
+    if [ -e "$SRPMDIR/${SRPMFILE}" -a \
+         -e "$RPMDIR/${ARCH}/${RPMFILE}" -a \
+         -e "$RPMDIR/${ARCH}/${DEBUGINFO}" ];
+    then
+      if [ -x ~/rpmsign.sh ]; then
+        ~/rpmsign.sh "$SRPMDIR/${SRPMFILE}"         || exit 1
+        ~/rpmsign.sh "$RPMDIR/${ARCH}/${RPMFILE}"   || exit 1
+        ~/rpmsign.sh "$RPMDIR/${ARCH}/${DEBUGINFO}" || exit 1
+      fi
+      cp -f "$SRPMDIR/${SRPMFILE}"         "docs/yum/${DISTRO}-source/"    || exit 1
+      cp -f "$RPMDIR/${ARCH}/${RPMFILE}"   "docs/yum/${DISTRO}-${ARCH}/"   || exit 1
+      cp -f "$RPMDIR/${ARCH}/${DEBUGINFO}" "docs/yum/${DISTRO}-debuginfo/" || exit 1
+      git add "docs/yum/${DISTRO}-source/${SRPMFILE}"  \
+              "docs/yum/${DISTRO}-${ARCH}/${RPMFILE}"  \
+              "docs/yum/${DISTRO}-debuginfo/${DEBUGINFO}" || exit 1
+    else
+      echo "RPM File Missing. Build Failed?"
+      exit 1
+    fi
+  done
+done

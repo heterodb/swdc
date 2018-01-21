@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# Put your password to sign
+PASS="XXXXXXXXXX"
+
+expect -c "
+set timeout 5
+spawn env LANG=C /usr/bin/rpmsign '$1'
+expect \"Enter pass phrase: \"
+send \"${PW}\n\"
+expect \"$\"
+exit 0
+"
