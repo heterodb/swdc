@@ -11,14 +11,14 @@ STROM_DIR="pg-strom"
 NVME_DIR="nvme-strom"
 PGSQL_VERSIONS="9.6 10"
 
+ANY_NEW_PACKAGES=0
+
 if rpmbuild -E '%{dist}' | grep -q '^\.el7'; then
   DISTRO="rhel7"
 else
   echo "unknown Linux distribution"
   exit 1
 fi
-# For RPM signing
-alias _rpmsign="rpmsign -D '_gpg_name HeteroDB,Inc'"
 
 # ensure Git repository exists and up-to-date, with no local changes
 test -e ${STROM_DIR}/.git || (echo "no pg-strom git repository"; exit 1)
@@ -53,6 +53,8 @@ SRCDIR=`rpmbuild -E %{_sourcedir}`
 RPMDIR=`rpmbuild -E %{_rpmdir}`
 SRPMDIR=`rpmbuild -E '%{_srcrpmdir}'`
 
+PUBLIC_TGZDIR="docs/tgz"
+
 #
 # Build heterodb-swdc package
 # -------------------------------
@@ -82,6 +84,7 @@ then
     cp -f "$RPMDIR/${ARCH}/${RPMFILE}" "docs/yum/${DISTRO}-${ARCH}/" || exit 1
     git add "docs/yum/${DISTRO}-source/" \
             "docs/yum/${DISTRO}-${ARCH}/" || exit 1
+    ANY_NEW_PACKAGES=1
   else
     echo "RPM files missing. Build failed?"
     exit 1
@@ -141,6 +144,7 @@ do
     cp -f "$RPMDIR/${ARCH}/${DEBUGINFO}" "docs/yum/${DISTRO}-debuginfo/" || exit 1
     git add "docs/yum/${DISTRO}-${ARCH}/${RPMFILE}"  \
             "docs/yum/${DISTRO}-debuginfo/${DEBUGINFO}" || exit 1
+    ANY_NEW_PACKAGES=1
   else
     echo "RPM File Missing. Build Failed?"
     exit 1
@@ -173,7 +177,8 @@ do
        [ "`git ls-files docs/yum/${DISTRO}-debuginfo/${DEBUGINFO} | wc -l`" -gt 0 ] && \
        [ "`git ls-files docs/yum/${DISTRO}-source/${SRPMFILE} | wc -l`" -gt 0 ];
     then
-      continue;
+echo
+#      continue;
     fi
     # OK, build a package
     make -C pg-strom tarball PGSTROM_VERSION=$sv
@@ -200,12 +205,56 @@ do
       cp -f "$SRPMDIR/${SRPMFILE}"         "docs/yum/${DISTRO}-source/"    || exit 1
       cp -f "$RPMDIR/${ARCH}/${RPMFILE}"   "docs/yum/${DISTRO}-${ARCH}/"   || exit 1
       cp -f "$RPMDIR/${ARCH}/${DEBUGINFO}" "docs/yum/${DISTRO}-debuginfo/" || exit 1
+      cp -f "${SRCDIR}/${STROM_TARBALL}.tar.gz" "${PUBLIC_TGZDIR}" || exit 1
       git add "docs/yum/${DISTRO}-source/${SRPMFILE}"  \
               "docs/yum/${DISTRO}-${ARCH}/${RPMFILE}"  \
-              "docs/yum/${DISTRO}-debuginfo/${DEBUGINFO}" || exit 1
+              "docs/yum/${DISTRO}-debuginfo/${DEBUGINFO}" \
+              "${PUBLIC_TGZDIR}/${STROM_TARBALL}.tar.gz" || exit 1
+      ANY_NEW_PACKAGES=1
     else
       echo "RPM File Missing. Build Failed?"
       exit 1
     fi
   done
 done
+
+#
+# Post rpmbuild steps
+#
+if [ $ANY_NEW_PACKAGES -ne 0 ]; then
+  # update yum repository
+  for d in docs/yum/*/repodata;
+  do
+    createrepo --update `dirname $d`
+  done
+
+  # update index file (heterodb-swdc)
+  LIST=`git ls-files 'docs/yum/*-noarch/heterodb-swdc-*.noarch.rpm'`
+  HTML1=""
+  for x in $LIST
+  do
+    ALINK=`echo $x | sed 's/^docs/./g'`
+    FNAME=`basename $x`
+    FTIME=`git --no-pager log -n1 --format=%ci $x`
+    FSIZE=`stat -c %s $x`
+    HTML1+="<li><a href=\"$ALINK\">$FNAME</a> ........ ($FSIZE bytes, $FTIME)</li>"
+  done
+
+  # update index file (pg-strom)
+  LIST=`git ls-files 'docs/tgz/pg-strom-*.tar.gz'`
+  HTML2=""
+  for x in $LIST
+  do
+    ALINK=`echo $x | sed 's/^docs/./g'`
+    FNAME=`basename $x`
+    FTIME=`git --no-pager log -n1 --format=%ci $x`
+    FSIZE=`stat -c %s $x`
+    HTML2+="<li><a href=\"$ALINK\">$FNAME</a> ........ ($FSIZE bytes, $FTIME)</li>"
+  done
+
+  cat files/index.src.html | \
+    sed -e "s|%%%HETERODB-SWDC-RPMS%%%|$HTML1|g" \
+        -e "s|%%%PGSTROM-SOURCE-TARBALL%%%|$HTML2|g" > docs/index.html
+fi
+exit 0
+
