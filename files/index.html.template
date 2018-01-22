@@ -1,0 +1,19 @@
+<html>
+<head>
+<title>HeteroDB Software Distribution Center</title>
+</head>
+<body>
+<h1>HeteroDB Software Distribution Center</h1>
+<hr>
+<h2>yum repository configurations</h2>
+#include "rpm_heterodb-swdc.list"
+
+<h2>PG-Strom Source Tarball</h2>
+#include "tgz_pg-strom.list"
+
+<hr>
+<h2>All RPM Files</h2>
+#include "all_rpm_files.list"
+
+</body>
+</html>

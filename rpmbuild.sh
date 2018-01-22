@@ -240,41 +240,32 @@ if [ $ANY_NEW_PACKAGES -ne 0 ]; then
     createrepo --simple-md-filenames --update `dirname $d`
   done
 
-  HTML=`mktemp`
-  cat<<EOF>>$HTML
-<html>
-<head>
-<title>HeteroDB Software Distribution Center</title>
-</head>
-<body>
-<h1>HeteroDB Software Distribution Center</h1>
-<hr>
-<h2>yum repository configurations</h2>
-<ul>
-EOF
+  TEMP=`mktemp -d`
   # update index file (heterodb-swdc)
+  HTML="$TEMP/rpm_heterodb-swdc.list"
+  echo "<ul>" > $HTML
   for x in `ls docs/yum/*-noarch/heterodb-swdc-*.noarch.rpm`
   do
     ALINK=`echo $x | sed 's/^docs/./g'`
     FNAME=`basename $x`
     echo "<li><a href=\"$ALINK\">$FNAME</a></li>" >> $HTML
   done
-
-  (echo "</ul>"
-   echo "<h2>PG-Strom Source Tarball</h2>"
-   echo "<ul>") >> $HTML
+  echo "</ul>" >> $HTML
 
   # update index file (pg-strom)
+  HTML="$TEMP/tgz_pg-strom.list"
+  echo "<ul>" > $HTML
   for x in `ls docs/tgz/pg-strom-*.tar.gz`
   do
     ALINK=`echo $x | sed 's/^docs/./g'`
     FNAME=`basename $x`
     echo "<li><a href=\"$ALINK\">$FNAME</a></li>" >> $HTML
   done
-  (echo "</ul>"
-   echo "<h2>RPM Files</h2>"
-   echo "<ul>") >> $HTML
+  echo "</ul>" >> $HTML
 
+  # update index files (all RPM files)
+  HTML="$TEMP/all_rpm_files.list"
+  echo "<ul>" > $HTML
   for dir in `ls -dr docs/yum/*`
   do
     (echo "<li><b>`basename $dir`</b>"
@@ -288,12 +279,9 @@ EOF
     (echo "  </ul>"
      echo "</li>") >> $HTML
   done
-
-  (echo "</ul>"
-   echo "</body>"
-   echo "</html>") >> $HTML
-  cp $HTML docs/index.html
-  rm $HTML
+  echo "</ul>" >> $HTML
+  cpp -I $TEMP -E files/index.html.template | grep -v ^# > docs/index.html
+  rm -rf $TEMP
 fi
 exit 0
 
