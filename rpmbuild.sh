@@ -8,6 +8,12 @@
 cd `dirname $0`
 git clean -fdx
 
+if [ "$1" = "--all" ]; then
+  REBUILD_ALL=1
+else
+  REBUILD_ALL=0
+fi
+
 STROM_DIR="pg-strom"
 NVME_DIR="nvme-strom"
 PGSQL_VERSIONS="9.6 10"
@@ -68,8 +74,9 @@ SWDC_VERSION=`rpmspec --qf %{version} -q files/heterodb-swdc.spec`
 SWDC_RELEASE=`rpmspec --qf %{release} -q files/heterodb-swdc.spec`
 RPMFILE="heterodb-swdc-${SWDC_VERSION}-${SWDC_RELEASE}.${ARCH}.rpm"
 SRPMFILE="heterodb-swdc-${SWDC_VERSION}-${SWDC_RELEASE}.src.rpm"
-if [ "`git ls-files docs/yum/${DISTRO}-${ARCH}/${RPMFILE} | wc -l`" -eq 0 ] && \
-   [ "`git ls-files docs/yum/${DISTRO}-source/${SRPMFILE} | wc -l`" -eq 0 ];
+if [ "$REBUILD_ALL" -ne 0 ] || \
+   [ "`git ls-files docs/yum/${DISTRO}-${ARCH}/${RPMFILE} | wc -l`" -eq 0 -a \
+     "`git ls-files docs/yum/${DISTRO}-source/${SRPMFILE} | wc -l`" -eq 0 ];
 then
   cp -f files/heterodb-swdc.repo files/RPM-GPG-KEY-HETERODB ${SRCDIR}
   cp -f files/heterodb-swdc.spec ${SPECDIR}
@@ -111,25 +118,28 @@ do
         -e "s/@@PRIORITY@@/$PRIORITY/g" > ${SPECDIR}/postgres${PKGVER}-alternatives.spec
   SPECFILE=${SPECDIR}/postgres${PKGVER}-alternatives.spec
   RPMFILE=`rpmspec --rpms -q $SPECFILE`.rpm
-  echo $RPMFILE
-  rpmbuild -ba ${SPECFILE} || (echo "filed on rpmbuild"; exit 1)
-  if [ -e "$RPMDIR/${ARCH}/${RPMFILE}" ];
+  if [ "$REBUILD_ALL" -ne 0 ] || \
+     [ "`git ls-files docs/yum/${DISTRO}-${ARCH}/${RPMFILE} | wc -l`" -eq 0 ];
   then
-    if [ -x ~/rpmsign.sh ];
+    rpmbuild -ba ${SPECFILE} || (echo "filed on rpmbuild"; exit 1)
+    if [ -e "$RPMDIR/${ARCH}/${RPMFILE}" ];
     then
-      ~/rpmsign.sh "$SRPMDIR/${SRPMFILE}" || exit 1
+      if [ -x ~/rpmsign.sh ];
+      then
+        ~/rpmsign.sh "$SRPMDIR/${SRPMFILE}" || exit 1
+      fi
+      cp -f "$RPMDIR/${ARCH}/${RPMFILE}"   "docs/yum/${DISTRO}-${ARCH}/"   || exit 1
+      git add "docs/yum/${DISTRO}-${ARCH}/${RPMFILE}"  || exit 1
+      ANY_NEW_PACKAGES=1
+    else
+      echo "RPM File Missing. Build Failed?"
+      exit 1
     fi
-    cp -f "$RPMDIR/${ARCH}/${RPMFILE}"   "docs/yum/${DISTRO}-${ARCH}/"   || exit 1
-    git add "docs/yum/${DISTRO}-${ARCH}/${RPMFILE}"  || exit 1
-    ANY_NEW_PACKAGES=1
-  else
-    echo "RPM File Missing. Build Failed?"
-    exit 1
   fi
 done
 
 #
-# Build pgstrom-kmod package
+# Build pg_strom-kmod package
 # ---------------------------
 mkdir -p ${SRCDIR}
 rm -rf ${RPMDIR}/*
@@ -151,15 +161,16 @@ do
   DEBUGINFO=`rpmspec -D "nvme_version ${NVME_VERSION}" \
                      -D "nvme_release ${NVME_RELEASE}" \
                      --rpms -q files/nvme-strom.spec | grep debuginfo`.rpm
-  if [ "`git ls-files docs/yum/${DISTRO}-${ARCH}/${RPMFILE} | wc -l`" -gt 0 ] && \
+  if [ "$REBUILD_ALL" -eq 0 ] && \
+     [ "`git ls-files docs/yum/${DISTRO}-${ARCH}/${RPMFILE} | wc -l`" -gt 0 ] && \
      [ "`git ls-files docs/yum/${DISTRO}-debuginfo/${DEBUGINFO} | wc -l`" -gt 0 ]
   then
     continue;
   fi
   # OK, build a package
   (cd nvme-strom; git archive --format=tar.gz \
-                              --prefix=nvme-strom-${NVME_TARBALL}/ \
-                              -o ${SRCDIR}/nvme-strom-${NVME_TARBALL}.tar.gz \
+                              --prefix=nvme_strom-${NVME_TARBALL}/ \
+                              -o ${SRCDIR}/nvme_strom-${NVME_TARBALL}.tar.gz \
                               $v kmod utils MASTER_LICENSE_KEY LICENSE)
   cp -f files/nvme-strom.spec ${SPECDIR}
   cat files/nvme-strom.dkms.conf | \
@@ -220,21 +231,24 @@ do
                       -D "strom_release ${STROM_RELEASE}" \
                       -D "pgsql_version ${pv}" \
                       --srpm -q files/pgstrom-v2.spec | sed "s/\\.${ARCH}\\\$/.src/g"`.rpm
-    if [ "`git ls-files docs/yum/${DISTRO}-${ARCH}/${RPMFILE} | wc -l`" -gt 0 ] && \
+    if [ "$REBUILD_ALL" -eq 0 ] && \
+       [ "`git ls-files docs/yum/${DISTRO}-${ARCH}/${RPMFILE} | wc -l`" -gt 0 ] && \
        [ "`git ls-files docs/yum/${DISTRO}-debuginfo/${DEBUGINFO} | wc -l`" -gt 0 ] && \
        [ "`git ls-files docs/yum/${DISTRO}-source/${SRPMFILE} | wc -l`" -gt 0 ];
     then
       continue;
     fi
     # OK, build a package
-    make -C pg-strom tarball PGSTROM_VERSION=$sv
+    env PATH=/usr/pgsql-${pv}/bin:$PATH \
+      make -C pg-strom tarball PGSTROM_VERSION=$sv
     cp -f "pg-strom/${STROM_TARBALL}.tar.gz" ${SRCDIR}
     cp -f "files/pgstrom-v2.spec" "${SPECDIR}/pgstrom-PG${PVNUM}.spec"
-    rpmbuild -D "strom_version ${STROM_VERSION}" \
-             -D "strom_release ${STROM_RELEASE}" \
-             -D "strom_tarball ${STROM_TARBALL}" \
-             -D "pgsql_version ${pv}" \
-             -ba ${SPECDIR}/pgstrom-PG${PVNUM}.spec || (echo "rpmbuild failed"; exit 1)
+    env PATH=/usr/pgsql-${pv}/bin:$PATH \
+      rpmbuild -D "strom_version ${STROM_VERSION}" \
+               -D "strom_release ${STROM_RELEASE}" \
+               -D "strom_tarball ${STROM_TARBALL}" \
+               -D "pgsql_version ${pv}" \
+               -ba ${SPECDIR}/pgstrom-PG${PVNUM}.spec || (echo "rpmbuild failed"; exit 1)
     echo "$SRPMDIR/${SRPMFILE}"
     echo "$RPMDIR/${ARCH}/${RPMFILE}"
     echo "$RPMDIR/${ARCH}/${DEBUGINFO}"

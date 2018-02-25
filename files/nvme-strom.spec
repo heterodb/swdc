@@ -1,9 +1,9 @@
-Name: nvme-strom
+Name: nvme_strom
 Version: %{nvme_version}
 Release: %{nvme_release}%{?dist}
 Summary: Linux kernel module for SSD-to-GPU Direct SQL Execution
 Group: Applications/Databases
-License: TBD
+License: BSD
 URL: https://github.com/heterodb/pg-strom
 Source0: %{name}-%{nvme_tarball}.tar.gz
 Source1: dkms.conf
@@ -36,7 +36,6 @@ under PG-Strom.
     %{buildroot}/%{_sysconfdir}/modules-load.d/nvme_strom.conf
 %{__install} -Dpm 644 kmod/nvme_strom.modprobe.conf \
     %{buildroot}/%{_sysconfdir}/modprobe.d/nvme_strom.conf
-ls -l %{buildroot}/%{_usrsrc}/%{name}-%{version}/
 
 %clean
 rm -rf %{buildroot}
@@ -59,6 +58,7 @@ fi
 %{_bindir}/nvme_stat
 %{_bindir}/ssd2gpu_test
 %{_bindir}/ssd2ram_test
+%dir %{_usrsrc}/%{name}-%{version}
 %{_usrsrc}/%{name}-%{version}/*
 %config %{_sysconfdir}/modules-load.d/nvme_strom.conf
 %config %{_sysconfdir}/modprobe.d/nvme_strom.conf

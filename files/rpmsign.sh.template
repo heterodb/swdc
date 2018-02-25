@@ -5,9 +5,9 @@ PASS="XXXXXXXXXX"
 
 expect -c "
 set timeout 5
-spawn env LANG=C /usr/bin/rpmsign '$1'
+spawn env LANG=C /usr/bin/rpmsign --resign '$1'
 expect \"Enter pass phrase: \"
-send \"${PW}\n\"
+send \"${PASS}\n\"
 expect \"$\"
 exit 0
-"
+" || exit 1

@@ -1,4 +1,4 @@
-Name: postgresql@@PKGVER@@-alternatives
+Name: postgres@@PKGVER@@-alternatives
 Version: 1.0
 Release: 1%{?dist}
 Summary: alternatives configuration for PostgreSQL @@PGSQL_VERSION@@
