@@ -110,21 +110,17 @@ do
         -e "s/@@PKGVER@@/$PKGVER/g"      \
         -e "s/@@PRIORITY@@/$PRIORITY/g" > ${SPECDIR}/postgres${PKGVER}-alternatives.spec
   SPECFILE=${SPECDIR}/postgres${PKGVER}-alternatives.spec
-  RPMFILE="postgresql${PKGVER}-alternatives-${PGALT_VERSION}-${PGALT_RELEASE}${DIST}.${ARCH}.rpm"
-  SRPMFILE="postgresql${PKGVER}-alternatives-${PGALT_VERSION}-${PGALT_RELEASE}${DIST}.src.rpm"
+  RPMFILE=`rpmspec --rpms -q $SPECFILE`.rpm
+  echo $RPMFILE
   rpmbuild -ba ${SPECFILE} || (echo "filed on rpmbuild"; exit 1)
-  if [ -e "$SRPMDIR/${SRPMFILE}" -a \
-       -e "$RPMDIR/${ARCH}/${RPMFILE}" ];
+  if [ -e "$RPMDIR/${ARCH}/${RPMFILE}" ];
   then
     if [ -x ~/rpmsign.sh ];
     then
       ~/rpmsign.sh "$SRPMDIR/${SRPMFILE}" || exit 1
-      ~/rpmsign.sh "$RPMDIR/${ARCH}/${RPMFILE}" || exit 1
     fi
-    cp -f "$SRPMDIR/${SRPMFILE}"         "docs/yum/${DISTRO}-source/"    || exit 1
     cp -f "$RPMDIR/${ARCH}/${RPMFILE}"   "docs/yum/${DISTRO}-${ARCH}/"   || exit 1
-    git add "docs/yum/${DISTRO}-source/${SRPMFILE}"  \
-            "docs/yum/${DISTRO}-${ARCH}/${RPMFILE}"  || exit 1
+    git add "docs/yum/${DISTRO}-${ARCH}/${RPMFILE}"  || exit 1
     ANY_NEW_PACKAGES=1
   else
     echo "RPM File Missing. Build Failed?"
@@ -164,7 +160,7 @@ do
   (cd nvme-strom; git archive --format=tar.gz \
                               --prefix=nvme-strom-${NVME_TARBALL}/ \
                               -o ${SRCDIR}/nvme-strom-${NVME_TARBALL}.tar.gz \
-                              $v kmod utils)
+                              $v kmod utils MASTER_LICENSE_KEY LICENSE)
   cp -f files/nvme-strom.spec ${SPECDIR}
   cat files/nvme-strom.dkms.conf | \
     sed -e "s/%%NVME_STROM_VERSION%%/${NVME_VERSION}/g" > ${SRCDIR}/dkms.conf
