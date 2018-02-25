@@ -53,6 +53,7 @@ SPECDIR=`rpmbuild -E %{_specdir}`
 SRCDIR=`rpmbuild -E %{_sourcedir}`
 RPMDIR=`rpmbuild -E %{_rpmdir}`
 SRPMDIR=`rpmbuild -E '%{_srcrpmdir}'`
+DIST=`rpmbuild -E '%{dist}'`
 
 PUBLIC_TGZDIR="docs/tgz"
 
@@ -93,6 +94,43 @@ then
     exit 1
   fi
 fi
+
+#
+# Build postgresXX-alternatives package
+# -------------------------------------
+PGALT_VERSION=1.0
+PGALT_RELEASE=1
+ARCH="noarch"
+for x in $PGSQL_VERSIONS
+do
+  PKGVER=`echo $x | sed 's/\\.//g'`
+  PRIORITY=`echo $x | awk '{print $1 * 10}'`
+  cat files/postgres-alternatives.spec | \
+    sed -e "s/@@PGSQL_VERSION@@/$x/g"    \
+        -e "s/@@PKGVER@@/$PKGVER/g"      \
+        -e "s/@@PRIORITY@@/$PRIORITY/g" > ${SPECDIR}/postgres${PKGVER}-alternatives.spec
+  SPECFILE=${SPECDIR}/postgres${PKGVER}-alternatives.spec
+  RPMFILE="postgresql${PKGVER}-alternatives-${PGALT_VERSION}-${PGALT_RELEASE}${DIST}.${ARCH}.rpm"
+  SRPMFILE="postgresql${PKGVER}-alternatives-${PGALT_VERSION}-${PGALT_RELEASE}${DIST}.src.rpm"
+  rpmbuild -ba ${SPECFILE} || (echo "filed on rpmbuild"; exit 1)
+  if [ -e "$SRPMDIR/${SRPMFILE}" -a \
+       -e "$RPMDIR/${ARCH}/${RPMFILE}" ];
+  then
+    if [ -x ~/rpmsign.sh ];
+    then
+      ~/rpmsign.sh "$SRPMDIR/${SRPMFILE}" || exit 1
+      ~/rpmsign.sh "$RPMDIR/${ARCH}/${RPMFILE}" || exit 1
+    fi
+    cp -f "$SRPMDIR/${SRPMFILE}"         "docs/yum/${DISTRO}-source/"    || exit 1
+    cp -f "$RPMDIR/${ARCH}/${RPMFILE}"   "docs/yum/${DISTRO}-${ARCH}/"   || exit 1
+    git add "docs/yum/${DISTRO}-source/${SRPMFILE}"  \
+            "docs/yum/${DISTRO}-${ARCH}/${RPMFILE}"  || exit 1
+    ANY_NEW_PACKAGES=1
+  else
+    echo "RPM File Missing. Build Failed?"
+    exit 1
+  fi
+done
 
 #
 # Build pgstrom-kmod package
