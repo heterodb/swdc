@@ -291,7 +291,7 @@ if [ $ANY_NEW_PACKAGES -ne 0 ]; then
   # update index file (pg-strom)
   HTML="$TEMP/tgz_pg-strom.list"
   echo "<ul>" > $HTML
-  for x in `ls docs/tgz/pg-strom-*.tar.gz`
+  for x in `ls docs/tgz/pg_strom-*.tar.gz`
   do
     ALINK=`echo $x | sed 's/^docs/./g'`
     FNAME=`basename $x`
