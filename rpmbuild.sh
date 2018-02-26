@@ -155,9 +155,9 @@ do
   else
     NVME_TARBALL="${NVME_VERSION}-${NVME_RELEASE}"
   fi
-  (cat files/nvme_strom.spec nvme-strom/CHANGELOG | \
-     sed -e "s/@@NVME_VERSION@@/${NVME_VERSION}/g"  \
-         -e "s/@@NVME_RELEASE@@/${NVME_RELEASE}/g"  \
+  (cat files/nvme_strom.spec | \
+     sed -e "s/@@NVME_VERSION@@/${NVME_VERSION}/g" \
+         -e "s/@@NVME_RELEASE@@/${NVME_RELEASE}/g" \
          -e "s/@@NVME_TARBALL@@/${NVME_TARBALL}/g";
    cd nvme-strom; git show $v:CHANGELOG) > ${SPECDIR}/nvme_strom.spec
 
@@ -208,27 +208,25 @@ do
   STROM_RELEASE=`echo $sv | sed -e 's/^v//g' -e 's/\-/ /g' | awk '{print $2}'`
   if [ -z "$STROM_RELEASE" ]; then
     STROM_RELEASE=1
-    STROM_TARBALL="pg-strom-${STROM_VERSION}"
+    STROM_TARBALL="pg_strom-${STROM_VERSION}"
   else
-    STROM_TARBALL="pg-strom-${STROM_VERSION}-${STROM_RELEASE}"
+    STROM_TARBALL="pg_strom-${STROM_VERSION}-${STROM_RELEASE}"
   fi
-  EXTRA=`rpmbuild -E '%{dist}'`
 
   for pv in $PGSQL_VERSIONS
   do
     PVNUM=`echo $pv | sed 's/\.//g'`
-    RPMFILE=`rpmspec -D "strom_version ${STROM_VERSION}" \
-                     -D "strom_release ${STROM_RELEASE}" \
-                     -D "pgsql_version ${pv}" \
-                     --rpms -q files/pgstrom-v2.spec | grep -v debuginfo`.rpm
-    DEBUGINFO=`rpmspec -D "strom_version ${STROM_VERSION}" \
-                       -D "strom_release ${STROM_RELEASE}" \
-                       -D "pgsql_version ${pv}" \
-                       --rpms -q files/pgstrom-v2.spec | grep debuginfo`.rpm
-    SRPMFILE=`rpmspec -D "strom_version ${STROM_VERSION}" \
-                      -D "strom_release ${STROM_RELEASE}" \
-                      -D "pgsql_version ${pv}" \
-                      --srpm -q files/pgstrom-v2.spec | sed "s/\\.${ARCH}\\\$/.src/g"`.rpm
+    SPECFILE=pg_strom-PG${PVNUM}.spec
+    (cat files/pgstrom-v2.spec | \
+       sed -e "s/@@STROM_VERSION@@/${STROM_VERSION}/g" \
+           -e "s/@@STROM_RELEASE@@/${STROM_RELEASE}/g" \
+           -e "s/@@STROM_TARBALL@@/${STROM_TARBALL}/g" \
+           -e "s/@@PGSQL_VERSION@@/${pv}/g" \
+           -e "s/@@PGSQL_PKGVER@@/${PVNUM}/g";
+     cd pg-strom; git show $sv:CHANGELOG) > ${SPECDIR}/${SPECFILE}
+    RPMFILE=`rpmspec --rpms   -q ${SPECDIR}/${SPECFILE} | grep -v debuginfo`.rpm
+    DEBUGINFO=`rpmspec --rpms -q ${SPECDIR}/${SPECFILE} | grep debuginfo`.rpm
+    SRPMFILE=`rpmspec --srpm  -q ${SPECDIR}/${SPECFILE} | sed "s/\\.${ARCH}\\\$/.src/g"`.rpm
     if [ "$REBUILD_ALL" -eq 0 ] && \
        [ "`git ls-files docs/yum/${DISTRO}-${ARCH}/${RPMFILE} | wc -l`" -gt 0 ] && \
        [ "`git ls-files docs/yum/${DISTRO}-debuginfo/${DEBUGINFO} | wc -l`" -gt 0 ] && \
@@ -240,16 +238,8 @@ do
     env PATH=/usr/pgsql-${pv}/bin:$PATH \
       make -C pg-strom tarball PGSTROM_VERSION=$sv
     cp -f "pg-strom/${STROM_TARBALL}.tar.gz" ${SRCDIR}
-    cp -f "files/pgstrom-v2.spec" "${SPECDIR}/pgstrom-PG${PVNUM}.spec"
     env PATH=/usr/pgsql-${pv}/bin:$PATH \
-      rpmbuild -D "strom_version ${STROM_VERSION}" \
-               -D "strom_release ${STROM_RELEASE}" \
-               -D "strom_tarball ${STROM_TARBALL}" \
-               -D "pgsql_version ${pv}" \
-               -ba ${SPECDIR}/pgstrom-PG${PVNUM}.spec || (echo "rpmbuild failed"; exit 1)
-    echo "$SRPMDIR/${SRPMFILE}"
-    echo "$RPMDIR/${ARCH}/${RPMFILE}"
-    echo "$RPMDIR/${ARCH}/${DEBUGINFO}"
+      rpmbuild -ba ${SPECDIR}/${SPECFILE} || (echo "rpmbuild failed"; exit 1)
 
     if [ -e "$SRPMDIR/${SRPMFILE}" -a \
          -e "$RPMDIR/${ARCH}/${RPMFILE}" -a \
