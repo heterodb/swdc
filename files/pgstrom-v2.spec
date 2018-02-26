@@ -6,11 +6,11 @@ Group: Applications/Databases
 License: GPL 2.0
 URL: https://github.com/heterodb/pg-strom
 Source0: @@STROM_TARBALL@@.tar.gz
-BuildRequires: postgresql@@PGSQL_PKGVER@@       >= 9.6.0
-BuildRequires: postgresql@@PGSQL_PKGVER@@-devel  >= 9.6.0
-BuildRequires: cuda                             >= 8.0
+BuildRequires: postgresql@@PGSQL_PKGVER@@
+BuildRequires: postgresql@@PGSQL_PKGVER@@-devel
+BuildRequires: cuda >= 9.1
 Requires: nvidia-kmod
-Requires: cuda                                  >= 8.0
+Requires: cuda >= 9.1
 Requires: postgresql@@PGSQL_PKGVER@@
 Requires: postgresql@@PGSQL_PKGVER@@-server
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -51,7 +51,6 @@ ldconfig
 %doc LICENSE README.md
 %{__pkglibdir}/pg_strom.so
 %{__pkgbindir}/gpuinfo
-%{__pkgbindir}/kfunc_info
 %{__pkgsharedir}/extension/*
 
 %changelog

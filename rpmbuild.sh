@@ -28,8 +28,8 @@ else
 fi
 
 # ensure Git repository exists and up-to-date, with no local changes
-test -e ${STROM_DIR}/.git || (echo "no pg-strom git repository"; exit 1)
-test -e ${NVME_DIR}/.git  || (echo "no nvme-strom git repository"; exit 1)
+test -e ${STROM_DIR}/.git || (echo "no $STROM_DIR git repository"; exit 1)
+test -e ${NVME_DIR}/.git  || (echo "no $NVME_DIR git repository"; exit 1)
 if [ `(cd $STROM_DIR; git diff) | wc -l` -lt 0 ]; then
   echo "$STROM_DIR has local changes"
   exit 1
@@ -38,21 +38,96 @@ if [ `(cd $NVME_DIR; git diff) | wc -l` -lt 0 ]; then
   echo "$NVME_DIR has local changes"
   exit 1
 fi
-(cd pg-strom; git pull)  || (echo "failed on git-pull (pg-strom)"; exit 1)
-(cd nvme-strom; git pull)  || (echo "failed on git-pull (nvme-strom)"; exit 1)
+# remove all the local tags, then pull upstream
+(cd $STROM_DIR;
+ for v in `git tag -l`; do git tag -d $v; done;
+ git pull) || (echo "failed on git-pull ($STROM_DIR)"; exit 1)
+(cd $NVME_DIR;
+ for v in `git tag -l`; do git tag -d $v; done;
+ git pull) || (echo "failed on git-pull ($NVME_DIR)"; exit 1)
 
 # get version information
-STROM_VERSION=`cat pg-strom/Makefile |     \
-               grep '^PGSTROM_VERSION=' |  \
-               sed 's/^PGSTROM_VERSION=//g'`
-if [ "_$1" = "_STABLE" ]; then
-  STROM_RELEASE=1
-else
-  STROM_RELEASE="`date +%y%m%d`"
-fi
+STROM_VERSIONS_LIST=`(cd $STROM_DIR; git tag -l)                      \
+                     | grep '^v[0-9]*\.[0-9]*\(\-[0-9]\+\)\?$'        \
+                     | sed -e 's/^v//g' -e 's/-/ /g'                  \
+                     | while read STROM_VERSION STROM_RELEASE;        \
+                       do                                             \
+                         test -z "$STROM_RELEASE" && STROM_RELEASE=1; \
+                         echo "${STROM_VERSION}:${STROM_RELEASE}";    \
+                       done`
 
-STROM_VERSIONS_LIST=`cd pg-strom; git tag -l | grep '^v[0-9]*\.[0-9]*\(\-[0-9]\+\)\?$'`
-NVME_VERSIONS_LIST=`cd nvme-strom; git tag -l | grep '^v[0-9]*\.[0-9]*\(\-[0-9]\+\)\?$'`
+NVME_VERSIONS_LIST=`(cd $NVME_DIR;  git tag -l)                       \
+                    | grep '^v[0-9]*\.[0-9]*\(\-[0-9]\+\)\?$'         \
+                    | sed -e 's/^v//g' -e 's/-/ /g'                   \
+                    | while read NVME_VERSION NVME_RELEASE;           \
+                      do                                              \
+                        test -z "$NVME_RELEASE" && NVME_RELEASE=1;    \
+                        echo "${NVME_VERSION}:${NVME_RELEASE}";       \
+                      done`
+
+# remove packages already deprecated
+echo $STROM_VERSIONS_LIST
+echo $NVME_VERSIONS_LIST
+
+# pg-strom (tgz)
+for f in `git ls-files 'docs/tgz/pg_strom-*.tar.gz'`;
+do
+  fver=`basename $f | sed -e 's/^pg_strom-//g' -e 's/\.tar\.gz$//g'`
+  FOUND=0
+  for sv in $STROM_VERSIONS_LIST;
+  do
+    sig=`echo $sv | tr ':' '-'`
+    if [ "$fver" = "$sig" ]; then
+      FOUND=1
+      break
+    fi
+  done
+
+  if [ $FOUND -eq 0 ]; then
+    git rm $f
+    ANY_NEW_PACKAGES=1
+  fi
+done
+
+# pg-strom (rpm)
+for f in `git ls-files 'docs/yum/*/pg_strom-*.rpm'`;
+do
+  fver=`rpm -qp --queryformat='%{version}-%{release}' $f`
+  FOUND=0
+  for sv in $STROM_VERSIONS_LIST;
+  do
+    sig=`echo $sv | tr ':' '-'`
+    if (echo $fver | grep -q "^$sig"); then
+      FOUND=1
+      break
+    fi
+  done
+
+  if [ $FOUND -eq 0 ]; then
+    git rm $f
+    ANY_NEW_PACKAGES=1
+  fi
+done
+
+# nvme-strom (rpm)
+for f in `git ls-files 'docs/yum/*/nvme_strom-*.rpm'`;
+do
+  fver=`rpm -qp --queryformat='%{version}-%{release}' $f`
+  FOUND=0
+  for nv in $NVME_VERSIONS_LIST;
+  do
+    sig=`echo $nv | tr ':' '-'`
+    if (echo $fver | grep -q "^$sig"); then
+      FOUND=1
+      break;
+    fi
+  done
+
+  if [ $FOUND -eq 0 ]; then
+    git rm $f
+    ANY_NEW_PACKAGES=1
+  fi
+done
 
 # get rpmbuild working directory
 SPECDIR=`rpmbuild -E %{_specdir}`
@@ -147,19 +222,22 @@ rm -rf ${RPMDIR}/*
 ARCH=`uname -m`
 for v in $NVME_VERSIONS_LIST;
 do
-  NVME_VERSION=`echo $v | sed -e 's/v//g' -e 's/-/ /g' | awk '{print $1}'`
-  NVME_RELEASE=`echo $v | sed -e 's/v//g' -e 's/-/ /g' | awk '{print $2}'`
-  if [ -z "$NVME_RELEASE" ]; then
-    NVME_RELEASE=1
+  set -- `echo $v | tr ':' ' '`
+  NVME_VERSION=$1
+  NVME_RELEASE=$2
+  if [ "$NVME_RELEASE" = "1" ];
+  then
+    NVME_TAG="v${NVME_VERSION}"
     NVME_TARBALL="${NVME_VERSION}"
   else
+    NVME_TAG="v${NVME_VERSION}-${NVME_RELEASE}"
     NVME_TARBALL="${NVME_VERSION}-${NVME_RELEASE}"
   fi
   (cat files/nvme_strom.spec | \
      sed -e "s/@@NVME_VERSION@@/${NVME_VERSION}/g" \
          -e "s/@@NVME_RELEASE@@/${NVME_RELEASE}/g" \
          -e "s/@@NVME_TARBALL@@/${NVME_TARBALL}/g";
-   cd nvme-strom; git show $v:CHANGELOG) > ${SPECDIR}/nvme_strom.spec
+   cd $NVME_DIR; git show ${NVME_TAG}:CHANGELOG) > ${SPECDIR}/nvme_strom.spec
 
   RPMFILE=`rpmspec --rpms -q ${SPECDIR}/nvme_strom.spec | grep -v debuginfo`.rpm
   DEBUGINFO=`rpmspec --rpms -q ${SPECDIR}/nvme_strom.spec | grep debuginfo`.rpm
@@ -170,10 +248,10 @@ do
     continue;
   fi
   # OK, build a package
-  (cd nvme-strom; git archive --format=tar.gz \
+  (cd $NVME_DIR; git archive --format=tar.gz \
                               --prefix=nvme_strom-${NVME_TARBALL}/ \
                               -o ${SRCDIR}/nvme_strom-${NVME_TARBALL}.tar.gz \
-                              $v kmod utils MASTER_LICENSE_KEY LICENSE)
+                              ${NVME_TAG} kmod utils MASTER_LICENSE_KEY LICENSE)
   cat files/nvme_strom.dkms.conf | \
     sed -e "s/@@NVME_STROM_VERSION@@/${NVME_VERSION}/g" > ${SRCDIR}/dkms.conf
 
@@ -204,12 +282,15 @@ done
 ARCH=`uname -m`
 for sv in $STROM_VERSIONS_LIST
 do
-  STROM_VERSION=`echo $sv | sed -e 's/^v//g' -e 's/\-/ /g' | awk '{print $1}'`
-  STROM_RELEASE=`echo $sv | sed -e 's/^v//g' -e 's/\-/ /g' | awk '{print $2}'`
-  if [ -z "$STROM_RELEASE" ]; then
-    STROM_RELEASE=1
+  set -- `echo $sv | tr ':' ' '`
+  STROM_VERSION=$1
+  STROM_RELEASE=$2
+  if [ "$STROM_RELEASE" = "1" ];
+  then
+    STROM_TAG="v${STROM_VERSION}"
     STROM_TARBALL="pg_strom-${STROM_VERSION}"
   else
+    STROM_TAG="v${STROM_VERSION}-${STROM_RELEASE}"
     STROM_TARBALL="pg_strom-${STROM_VERSION}-${STROM_RELEASE}"
   fi
 
@@ -223,7 +304,7 @@ do
            -e "s/@@STROM_TARBALL@@/${STROM_TARBALL}/g" \
            -e "s/@@PGSQL_VERSION@@/${pv}/g" \
            -e "s/@@PGSQL_PKGVER@@/${PVNUM}/g";
-     cd pg-strom; git show $sv:CHANGELOG) > ${SPECDIR}/${SPECFILE}
+     cd $STROM_DIR; git show ${STROM_TAG}:CHANGELOG) > ${SPECDIR}/${SPECFILE}
     RPMFILE=`rpmspec --rpms   -q ${SPECDIR}/${SPECFILE} | grep -v debuginfo`.rpm
     DEBUGINFO=`rpmspec --rpms -q ${SPECDIR}/${SPECFILE} | grep debuginfo`.rpm
     SRPMFILE=`rpmspec --srpm  -q ${SPECDIR}/${SPECFILE} | sed "s/\\.${ARCH}\\\$/.src/g"`.rpm
@@ -236,8 +317,8 @@ do
     fi
     # OK, build a package
     env PATH=/usr/pgsql-${pv}/bin:$PATH \
-      make -C pg-strom tarball PGSTROM_VERSION=$sv
-    cp -f "pg-strom/${STROM_TARBALL}.tar.gz" ${SRCDIR}
+      make -C $STROM_DIR tarball PGSTROM_VERSION=${STROM_TAG}
+    cp -f "${STROM_DIR}/${STROM_TARBALL}.tar.gz" ${SRCDIR}
     env PATH=/usr/pgsql-${pv}/bin:$PATH \
       rpmbuild -ba ${SPECDIR}/${SPECFILE} || (echo "rpmbuild failed"; exit 1)
 
