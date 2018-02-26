@@ -139,8 +139,8 @@ do
 done
 
 #
-# Build pg_strom-kmod package
-# ---------------------------
+# Build nvme_strom package
+# -------------------------
 mkdir -p ${SRCDIR}
 rm -rf ${RPMDIR}/*
 
@@ -155,12 +155,14 @@ do
   else
     NVME_TARBALL="${NVME_VERSION}-${NVME_RELEASE}"
   fi
-  RPMFILE=`rpmspec -D "nvme_version ${NVME_VERSION}" \
-                   -D "nvme_release ${NVME_RELEASE}" \
-                   --rpms -q files/nvme-strom.spec | grep -v debuginfo`.rpm
-  DEBUGINFO=`rpmspec -D "nvme_version ${NVME_VERSION}" \
-                     -D "nvme_release ${NVME_RELEASE}" \
-                     --rpms -q files/nvme-strom.spec | grep debuginfo`.rpm
+  (cat files/nvme_strom.spec nvme-strom/CHANGELOG | \
+     sed -e "s/@@NVME_VERSION@@/${NVME_VERSION}/g"  \
+         -e "s/@@NVME_RELEASE@@/${NVME_RELEASE}/g"  \
+         -e "s/@@NVME_TARBALL@@/${NVME_TARBALL}/g";
+   cd nvme-strom; git show $v:CHANGELOG) > ${SPECDIR}/nvme_strom.spec
+
+  RPMFILE=`rpmspec --rpms -q ${SPECDIR}/nvme_strom.spec | grep -v debuginfo`.rpm
+  DEBUGINFO=`rpmspec --rpms -q ${SPECDIR}/nvme_strom.spec | grep debuginfo`.rpm
   if [ "$REBUILD_ALL" -eq 0 ] && \
      [ "`git ls-files docs/yum/${DISTRO}-${ARCH}/${RPMFILE} | wc -l`" -gt 0 ] && \
      [ "`git ls-files docs/yum/${DISTRO}-debuginfo/${DEBUGINFO} | wc -l`" -gt 0 ]
@@ -172,14 +174,10 @@ do
                               --prefix=nvme_strom-${NVME_TARBALL}/ \
                               -o ${SRCDIR}/nvme_strom-${NVME_TARBALL}.tar.gz \
                               $v kmod utils MASTER_LICENSE_KEY LICENSE)
-  cp -f files/nvme-strom.spec ${SPECDIR}
-  cat files/nvme-strom.dkms.conf | \
-    sed -e "s/%%NVME_STROM_VERSION%%/${NVME_VERSION}/g" > ${SRCDIR}/dkms.conf
+  cat files/nvme_strom.dkms.conf | \
+    sed -e "s/@@NVME_STROM_VERSION@@/${NVME_VERSION}/g" > ${SRCDIR}/dkms.conf
 
-  rpmbuild -D "nvme_version ${NVME_VERSION}" \
-           -D "nvme_release ${NVME_RELEASE}" \
-           -D "nvme_tarball ${NVME_TARBALL}" \
-           -ba ${SPECDIR}/nvme-strom.spec || (echo "rpmbuild failed"; exit 1)
+  rpmbuild -ba ${SPECDIR}/nvme_strom.spec || (echo "rpmbuild failed"; exit 1)
 
   if [ -e "$RPMDIR/${ARCH}/${RPMFILE}" -a \
        -e "$RPMDIR/${ARCH}/${DEBUGINFO}" ];

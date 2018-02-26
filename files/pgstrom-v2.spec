@@ -57,5 +57,3 @@ ldconfig
 %{__pkgsharedir}/extension/*
 
 %changelog
-* Sat Jan 20 2018 KaiGai Kohei <kaigai@heterodb.com>
-- initial RPM specfile

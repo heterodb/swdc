@@ -1,11 +1,11 @@
 Name: nvme_strom
-Version: %{nvme_version}
-Release: %{nvme_release}%{?dist}
+Version: @@NVME_VERSION@@
+Release: @@NVME_RELEASE@@%{?dist}
 Summary: Linux kernel module for SSD-to-GPU Direct SQL Execution
 Group: Applications/Databases
 License: BSD
 URL: https://github.com/heterodb/pg-strom
-Source0: %{name}-%{nvme_tarball}.tar.gz
+Source0: %{name}-@@NVME_TARBALL@@.tar.gz
 Source1: dkms.conf
 Requires: dkms
 Requires: kernel-devel >= 3.10.0-514
@@ -16,7 +16,7 @@ nvme-strom is a kernel module to intermediates SSD-to-GPU peer-to-peer DMA
 under PG-Strom.
 
 %prep
-%setup -q -n %{name}-%{nvme_tarball}
+%setup -q -n %{name}-@@NVME_TARBALL@@
 
 %build
 %{__rm} -rf %{buildroot}
@@ -64,5 +64,3 @@ fi
 %config %{_sysconfdir}/modprobe.d/nvme_strom.conf
 
 %changelog
-* Sat Jan 20 2018 KaiGai Kohei <kaigai@heterodb.com>
-- initial RPM specfile
