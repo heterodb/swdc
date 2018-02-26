@@ -192,7 +192,7 @@ do
     then
       if [ -x ~/rpmsign.sh ];
       then
-        ~/rpmsign.sh "$SRPMDIR/${SRPMFILE}" || exit 1
+        ~/rpmsign.sh "$RPMDIR/noarch/${RPMFILE}" || exit 1
       fi
       cp -f "$RPMDIR/noarch/${RPMFILE}"   "docs/yum/${DISTRO}-${ARCH}/"   || exit 1
       git add "docs/yum/${DISTRO}-${ARCH}/${RPMFILE}"  || exit 1
