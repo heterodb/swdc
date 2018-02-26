@@ -66,8 +66,6 @@ NVME_VERSIONS_LIST=`(cd $NVME_DIR;  git tag -l)                       \
                       done`
 
 # remove packages already deprecated
-echo $STROM_VERSIONS_LIST
-echo $NVME_VERSIONS_LIST
 
 # pg-strom (tgz)
 for f in `git ls-files 'docs/tgz/pg_strom-*.tar.gz'`;
@@ -135,6 +133,7 @@ SRCDIR=`rpmbuild -E %{_sourcedir}`
 RPMDIR=`rpmbuild -E %{_rpmdir}`
 SRPMDIR=`rpmbuild -E '%{_srcrpmdir}'`
 DIST=`rpmbuild -E '%{dist}'`
+ARCH=x86_64
 
 PUBLIC_TGZDIR="docs/tgz"
 
@@ -143,33 +142,26 @@ PUBLIC_TGZDIR="docs/tgz"
 # -------------------------------
 mkdir -p ${SRCDIR}
 rm -rf ${RPMDIR}/*
-
-ARCH="noarch"
 SWDC_VERSION=`rpmspec --qf %{version} -q files/heterodb-swdc.spec`
 SWDC_RELEASE=`rpmspec --qf %{release} -q files/heterodb-swdc.spec`
-RPMFILE="heterodb-swdc-${SWDC_VERSION}-${SWDC_RELEASE}.${ARCH}.rpm"
-SRPMFILE="heterodb-swdc-${SWDC_VERSION}-${SWDC_RELEASE}.src.rpm"
+RPMFILE="`rpmspec --rpms -q files/heterodb-swdc.spec`.rpm"
 if [ "$REBUILD_ALL" -ne 0 ] || \
-   [ "`git ls-files docs/yum/${DISTRO}-${ARCH}/${RPMFILE} | wc -l`" -eq 0 -a \
-     "`git ls-files docs/yum/${DISTRO}-source/${SRPMFILE} | wc -l`" -eq 0 ];
+   [ "`git ls-files docs/yum/${DISTRO}-${ARCH}/${RPMFILE} | wc -l`" -eq 0 ];
 then
+  echo hgoehoge
   cp -f files/heterodb-swdc.repo files/RPM-GPG-KEY-HETERODB ${SRCDIR}
   cp -f files/heterodb-swdc.spec ${SPECDIR}
-  SPECFILE=${SPECDIR}/heterodb-swdc.spec
+  SPECFILE=heterodb-swdc.spec
 
-  rpmbuild -ba ${SPECFILE} || (echo "filed on rpmbuild"; exit 1)
-  if [ -e "$SRPMDIR/${SRPMFILE}" -a \
-       -e "$RPMDIR/${ARCH}/${RPMFILE}" ];
+  rpmbuild -ba ${SPECDIR}/${SPECFILE} || (echo "filed on rpmbuild"; exit 1)
+  if [ -e "$RPMDIR/noarch/${RPMFILE}" ];
   then
     if [ -x ~/rpmsign.sh ];
     then
-      ~/rpmsign.sh "$SRPMDIR/${SRPMFILE}" || exit 1
-      ~/rpmsign.sh "$RPMDIR/${ARCH}/${RPMFILE}" || exit 1
+      ~/rpmsign.sh "$RPMDIR/noarch/${RPMFILE}" || exit 1
     fi
-    cp -f "$SRPMDIR/${SRPMFILE}"       "docs/yum/${DISTRO}-source/" || exit 1
-    cp -f "$RPMDIR/${ARCH}/${RPMFILE}" "docs/yum/${DISTRO}-${ARCH}/" || exit 1
-    git add "docs/yum/${DISTRO}-source/${SRPMFILE}" \
-            "docs/yum/${DISTRO}-${ARCH}/${RPMFILE}" || exit 1
+    cp -f "$RPMDIR/noarch/${RPMFILE}" "docs/yum/${DISTRO}-${ARCH}/" || exit 1
+    git add "docs/yum/${DISTRO}-${ARCH}/${RPMFILE}" || exit 1
     ANY_NEW_PACKAGES=1
   else
     echo "RPM files missing. Build failed?"
@@ -182,7 +174,6 @@ fi
 # -------------------------------------
 PGALT_VERSION=1.0
 PGALT_RELEASE=1
-ARCH="noarch"
 for x in $PGSQL_VERSIONS
 do
   PKGVER=`echo $x | sed 's/\\.//g'`
@@ -197,13 +188,13 @@ do
      [ "`git ls-files docs/yum/${DISTRO}-${ARCH}/${RPMFILE} | wc -l`" -eq 0 ];
   then
     rpmbuild -ba ${SPECFILE} || (echo "filed on rpmbuild"; exit 1)
-    if [ -e "$RPMDIR/${ARCH}/${RPMFILE}" ];
+    if [ -e "$RPMDIR/noarch/${RPMFILE}" ];
     then
       if [ -x ~/rpmsign.sh ];
       then
         ~/rpmsign.sh "$SRPMDIR/${SRPMFILE}" || exit 1
       fi
-      cp -f "$RPMDIR/${ARCH}/${RPMFILE}"   "docs/yum/${DISTRO}-${ARCH}/"   || exit 1
+      cp -f "$RPMDIR/noarch/${RPMFILE}"   "docs/yum/${DISTRO}-${ARCH}/"   || exit 1
       git add "docs/yum/${DISTRO}-${ARCH}/${RPMFILE}"  || exit 1
       ANY_NEW_PACKAGES=1
     else
@@ -401,4 +392,3 @@ if [ $ANY_NEW_PACKAGES -ne 0 ]; then
   rm -rf $TEMP
 fi
 exit 0
-
