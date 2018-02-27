@@ -1,13 +1,14 @@
 #!/bin/sh
 
 # Put your password to sign
-PASS="XXXXXXXXXX"
+PASS="XXXXXXXX"
+FILE="$1"
 
 expect -c "
 set timeout 5
-spawn env LANG=C /usr/bin/rpmsign --resign '$1'
+spawn env LANG=C /usr/bin/rpmsign --resign $FILE
 expect \"Enter pass phrase: \"
 send \"${PASS}\n\"
-expect \"$\"
+expect eof
 exit 0
 " || exit 1

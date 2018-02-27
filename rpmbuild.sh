@@ -352,7 +352,7 @@ if [ $ANY_NEW_PACKAGES -ne 0 ]; then
   # update index file (heterodb-swdc)
   HTML="$TEMP/rpm_heterodb-swdc.list"
   echo "<ul>" > $HTML
-  for x in `ls docs/yum/*-noarch/heterodb-swdc-*.noarch.rpm`
+  for x in `ls docs/yum/*/heterodb-swdc-*.noarch.rpm`
   do
     ALINK=`echo $x | sed 's/^docs/./g'`
     FNAME=`basename $x`
