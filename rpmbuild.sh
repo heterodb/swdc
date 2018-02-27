@@ -10,15 +10,18 @@ git clean -fdx
 
 if [ "$1" = "--all" ]; then
   REBUILD_ALL=1
+  ANY_NEW_PACKAGES=1
+elif [ "$1" = "--refresh" ]; then
+  REBUILD_ALL=0
+  ANY_NEW_PACKAGES=1
 else
   REBUILD_ALL=0
+  ANY_NEW_PACKAGES=0
 fi
 
 STROM_DIR="pg-strom"
 NVME_DIR="nvme-strom"
 PGSQL_VERSIONS="9.6 10"
-
-ANY_NEW_PACKAGES=0
 
 if rpmbuild -E '%{dist}' | grep -q '^\.el7'; then
   DISTRO="rhel7"
@@ -172,37 +175,27 @@ fi
 #
 # Build postgresXX-alternatives package
 # -------------------------------------
-PGALT_VERSION=1.0
-PGALT_RELEASE=1
-for x in $PGSQL_VERSIONS
-do
-  PKGVER=`echo $x | sed 's/\\.//g'`
-  PRIORITY=`echo $x | awk '{print $1 * 10}'`
-  cat files/postgres-alternatives.spec | \
-    sed -e "s/@@PGSQL_VERSION@@/$x/g"    \
-        -e "s/@@PKGVER@@/$PKGVER/g"      \
-        -e "s/@@PRIORITY@@/$PRIORITY/g" > ${SPECDIR}/postgres${PKGVER}-alternatives.spec
-  SPECFILE=${SPECDIR}/postgres${PKGVER}-alternatives.spec
-  RPMFILE=`rpmspec --rpms -q $SPECFILE`.rpm
-  if [ "$REBUILD_ALL" -ne 0 ] || \
-     [ "`git ls-files docs/yum/${DISTRO}-${ARCH}/${RPMFILE} | wc -l`" -eq 0 ];
+SPECFILE=postgresql-alternatives.spec
+cp -f files/${SPECFILE} ${SPECDIR}
+RPMFILE=`rpmspec --rpms -q ${SPECDIR}/${SPECFILE}`.rpm
+if [ "$REBUILD_ALL" -ne 0 ] || \
+   [ "`git ls-files docs/yum/${DISTRO}-${ARCH}/${RPMFILE} | wc -l`" -eq 0 ];
+then
+  rpmbuild -ba ${SPECDIR}/${SPECFILE} || (echo "filed on rpmbuild"; exit 1)
+  if [ -e "${RPMDIR}/noarch/${RPMFILE}" ];
   then
-    rpmbuild -ba ${SPECFILE} || (echo "filed on rpmbuild"; exit 1)
-    if [ -e "$RPMDIR/noarch/${RPMFILE}" ];
+    if [ -x ~/rpmsign.sh ];
     then
-      if [ -x ~/rpmsign.sh ];
-      then
-        ~/rpmsign.sh "$RPMDIR/noarch/${RPMFILE}" || exit 1
-      fi
-      cp -f "$RPMDIR/noarch/${RPMFILE}"   "docs/yum/${DISTRO}-${ARCH}/"   || exit 1
-      git add "docs/yum/${DISTRO}-${ARCH}/${RPMFILE}"  || exit 1
-      ANY_NEW_PACKAGES=1
-    else
-      echo "RPM File Missing. Build Failed?"
-      exit 1
+      ~/rpmsign.sh "$RPMDIR/noarch/${RPMFILE}" || exit 1
     fi
+    cp -f "$RPMDIR/noarch/${RPMFILE}"   "docs/yum/${DISTRO}-${ARCH}/"   || exit 1
+    git add "docs/yum/${DISTRO}-${ARCH}/${RPMFILE}"  || exit 1
+    ANY_NEW_PACKAGES=1
+  else
+    echo "RPM File Missing. Build Failed?"
+    exit 1
   fi
-done
+fi
 
 #
 # Build nvme_strom package
