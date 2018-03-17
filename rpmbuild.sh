@@ -289,6 +289,7 @@ do
            -e "s/@@PGSQL_VERSION@@/${pv}/g" \
            -e "s/@@PGSQL_PKGVER@@/${PVNUM}/g";
      cd $STROM_DIR; git show ${STROM_TAG}:CHANGELOG) > ${SPECDIR}/${SPECFILE}
+    cp files/systemd-pg_strom.conf ${SPECDIR}
     RPMFILE=`rpmspec --rpms   -q ${SPECDIR}/${SPECFILE} | grep -v debuginfo`.rpm
     DEBUGINFO=`rpmspec --rpms -q ${SPECDIR}/${SPECFILE} | grep debuginfo`.rpm
     SRPMFILE=`rpmspec --srpm  -q ${SPECDIR}/${SPECFILE} | sed "s/\\.${ARCH}\\\$/.src/g"`.rpm
