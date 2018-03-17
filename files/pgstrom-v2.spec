@@ -22,8 +22,7 @@ AutoReqProv: no
 %define __pkgbindir     %(%{__pg_config} --bindir)
 %define __pkgsharedir   %(%{__pg_config} --sharedir)
 %define __cuda_path     /usr/local/cuda
-%define __systemd_confdir \
-    %{_sysconfdir}/systemd/system/postgresql-@@PGSQL_PKGVER@@.service.d
+%define __systemd_conf  %{_sysconfdir}/systemd/system/postgresql-@@PGSQL_PKGVER@@.service.d/pg_strom.conf
 
 %description
 PG-Strom is an extension for PostgreSQL, to accelerate analytic queries
@@ -39,8 +38,7 @@ rm -rf %{buildroot}
 %install
 rm -rf %{buildroot}
 %{__make} CUDA_PATH=%{__cuda_path} PG_CONFIG=%{__pg_config} DESTDIR=%{buildroot} install
-%{__install} -Dpm 644 %{source1} \
-             %{buildroot}/%{__systemd_confdir}/pg_strom.conf
+%{__install} -Dpm 644 %{SOURCE1} %{buildroot}/%{__systemd_conf}
 
 %clean
 rm -rf %{buildroot}
@@ -57,7 +55,6 @@ ldconfig
 %{__pkglibdir}/pg_strom.so
 %{__pkgbindir}/gpuinfo
 %{__pkgsharedir}/extension/*
-%{_sysconfdir}/systemd/system/postgresql-10.service.d/
-%{__systemd_confdir}/pg_strom.conf
+%config %{__systemd_conf}
 
 %changelog
