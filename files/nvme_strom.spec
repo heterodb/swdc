@@ -50,7 +50,8 @@ fi
 /usr/sbin/dkms install -m %{name} -v %{version}
 
 %preun
-/usr/sbin/dkms remove -m %{name} -v %{version} --all
+/usr/sbin/dkms remove -m %{name} -v %{version} --all || \
+	echo "notice: %{name} -v %{version} might be manually removed."
 
 %files
 %defattr(-,root,root,-)
