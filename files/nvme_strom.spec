@@ -21,7 +21,6 @@ under PG-Strom.
 %build
 %{__rm} -rf %{buildroot}
 %{__make} -C utils
-%{__make} -C kmod modules
 
 %install
 %{__rm} -rf %{buildroot}
