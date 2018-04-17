@@ -20,6 +20,8 @@ under PG-Strom.
 
 %build
 %{__rm} -rf %{buildroot}
+%{__make} -C kmod build-dkms \
+    DKMS_DEST=%{buildroot}/%{_usrsrc}/%{name}-%{version}
 %{__make} -C utils
 
 %install
