@@ -44,10 +44,12 @@ fi
 # remove all the local tags, then pull upstream
 (cd $STROM_DIR;
  for v in `git tag -l`; do git tag -d $v; done;
- git pull) || (echo "failed on git-pull ($STROM_DIR)"; exit 1)
+ git pull && git fetch --tags) || \
+(echo "failed on git-pull ($STROM_DIR)"; exit 1)
 (cd $NVME_DIR;
  for v in `git tag -l`; do git tag -d $v; done;
- git pull) || (echo "failed on git-pull ($NVME_DIR)"; exit 1)
+ git pull && git fetch --tags) || \
+(echo "failed on git-pull ($NVME_DIR)"; exit 1)
 
 # get version information
 STROM_VERSIONS_LIST=`(cd $STROM_DIR; git tag -l)                      \
