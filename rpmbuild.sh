@@ -80,7 +80,7 @@ do
   for sv in $STROM_VERSIONS_LIST;
   do
     sig=`echo $sv | tr ':' '-'`
-    if [ "$fver" = "$sig" ]; then
+    if [ "${fver}" = "${sig}" -o "${fver}-1" = "${sig}" ]; then
       FOUND=1
       break
     fi
