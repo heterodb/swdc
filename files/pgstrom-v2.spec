@@ -1,4 +1,6 @@
-Name: pg_strom-PG@@PGSQL_PKGVER@@
+%define PGSQL_PKGVER	%(echo @@PGSQL_VERSION@@ | sed 's/[^0-9]//g')
+
+Name: pg_strom-PG%{PGSQL_PKGVER}
 Version: @@STROM_VERSION@@
 Release: @@STROM_RELEASE@@%{?dist}
 Summary: PG-Strom extension module for PostgreSQL
@@ -7,13 +9,20 @@ License: GPL 2.0
 URL: https://github.com/heterodb/pg-strom
 Source0: @@STROM_TARBALL@@.tar.gz
 Source1: systemd-pg_strom.conf
-BuildRequires: postgresql@@PGSQL_PKGVER@@
-BuildRequires: postgresql@@PGSQL_PKGVER@@-devel
+BuildRequires: postgresql%{PGSQL_PKGVER}
+BuildRequires: postgresql%{PGSQL_PKGVER}-devel
 BuildRequires: cuda >= 9.1
 Requires: nvidia-kmod
 Requires: cuda >= 9.1
-Requires: postgresql@@PGSQL_PKGVER@@
-Requires: postgresql@@PGSQL_PKGVER@@-server
+%if "%{PGSQL_PKGVER}" == "96"
+Requires: postgresql%{PGSQL_PKGVER}-server >= 9.6.9
+%else
+%if "%{PGSQL_PKGVER}" == "10"
+Requires: postgresql%{PGSQL_PKGVER}-server >= 10.4
+%else
+Requires: postgresql%{PGSQL_PKGVER}-server
+%endif
+%endif
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 AutoReqProv: no
 
@@ -22,7 +31,7 @@ AutoReqProv: no
 %define __pkgbindir     %(%{__pg_config} --bindir)
 %define __pkgsharedir   %(%{__pg_config} --sharedir)
 %define __cuda_path     /usr/local/cuda
-%define __systemd_conf  %{_sysconfdir}/systemd/system/postgresql-@@PGSQL_PKGVER@@.service.d/pg_strom.conf
+%define __systemd_conf  %{_sysconfdir}/systemd/system/postgresql-%{PGSQL_PKGVER}.service.d/pg_strom.conf
 
 %description
 PG-Strom is an extension for PostgreSQL, to accelerate analytic queries

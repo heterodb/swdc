@@ -283,13 +283,12 @@ do
   for pv in $PGSQL_VERSIONS
   do
     PVNUM=`echo $pv | sed 's/\.//g'`
-    SPECFILE=pg_strom-PG${PVNUM}.spec
+    SPECFILE="pg_strom-PG${PVNUM}.spec"
     (cat files/pgstrom-v2.spec | \
        sed -e "s/@@STROM_VERSION@@/${STROM_VERSION}/g" \
            -e "s/@@STROM_RELEASE@@/${STROM_RELEASE}/g" \
            -e "s/@@STROM_TARBALL@@/${STROM_TARBALL}/g" \
-           -e "s/@@PGSQL_VERSION@@/${pv}/g" \
-           -e "s/@@PGSQL_PKGVER@@/${PVNUM}/g";
+           -e "s/@@PGSQL_VERSION@@/${pv}/g";
      cd $STROM_DIR; git show ${STROM_TAG}:CHANGELOG) > ${SPECDIR}/${SPECFILE}
     cp files/systemd-pg_strom.conf ${SRCDIR}
     RPMFILE=`rpmspec --rpms   -q ${SPECDIR}/${SPECFILE} | grep -v debuginfo`.rpm

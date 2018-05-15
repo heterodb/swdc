@@ -8,7 +8,7 @@ URL: https://github.com/heterodb/pg-strom
 Source0: %{name}-@@NVME_TARBALL@@.tar.gz
 Source1: dkms.conf
 Requires: dkms
-Requires: kernel-devel >= 3.10.0-514
+Requires: kernel-devel >= 3.10.0-693.17
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
 %description
@@ -21,6 +21,7 @@ under PG-Strom.
 %build
 %{__rm} -rf %{buildroot}
 %{__make} -C kmod build-dkms \
+    NVME_STROM_VERSION=%{version}-%{release} \
     DKMS_DEST=%{buildroot}/%{_usrsrc}/%{name}-%{version}
 %{__make} -C utils
 
@@ -31,6 +32,7 @@ under PG-Strom.
 %{__install} -Dpm 755 utils/ssd2ram_test %{buildroot}/%{_bindir}/ssd2ram_test
 
 %{__make} -C kmod install-dkms \
+    NVME_STROM_VERSION=%{version}-%{release} \
     DKMS_DEST=%{buildroot}/%{_usrsrc}/%{name}-%{version}
 %{__install} -Dpm 644 %{SOURCE1} %{buildroot}/%{_usrsrc}/%{name}-%{version}/dkms.conf
 %{__install} -Dpm 644 kmod/nvme_strom.modload.conf \
