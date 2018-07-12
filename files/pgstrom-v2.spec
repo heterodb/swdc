@@ -28,8 +28,8 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 AutoReqProv: no
 
 %package test
-Summay: PG-Strom related test tools and scripts
-Group: Development/System
+Summary: PG-Strom related test tools and scripts
+Group: Applications/Databases
 
 %define __pg_config     /usr/pgsql-@@PGSQL_VERSION@@/bin/pg_config
 %define __pkglibdir     %(%{__pg_config} --pkglibdir)
@@ -74,7 +74,7 @@ ldconfig
 %{__pkgsharedir}/extension/*
 %config %{__systemd_conf}
 
-%files
+%files test
 %{__pkgbindir}/dbgen-dbt3
 %{__pkgbindir}/dbgen-ssbm
 

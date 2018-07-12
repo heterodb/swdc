@@ -291,7 +291,8 @@ do
            -e "s/@@PGSQL_VERSION@@/${pv}/g";
      cd $STROM_DIR; git show ${STROM_TAG}:CHANGELOG) > ${SPECDIR}/${SPECFILE}
     cp files/systemd-pg_strom.conf ${SRCDIR}
-    RPMFILE=`rpmspec --rpms   -q ${SPECDIR}/${SPECFILE} | grep -v debuginfo`.rpm
+    RPMFILE=`rpmspec --rpms   -q ${SPECDIR}/${SPECFILE} | head -1`.rpm
+#    RPMTESTFILE=`rpmspec --rpms  -q ${SPECDIR}/${SPECFILE} | grep test`.rpm
     DEBUGINFO=`rpmspec --rpms -q ${SPECDIR}/${SPECFILE} | grep debuginfo`.rpm
     SRPMFILE=`rpmspec --srpm  -q ${SPECDIR}/${SPECFILE} | sed "s/\\.${ARCH}\\\$/.src/g"`.rpm
     if [ "$REBUILD_ALL" -eq 0 ] && \
