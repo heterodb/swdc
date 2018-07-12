@@ -27,9 +27,10 @@ under PG-Strom.
 
 %install
 %{__rm} -rf %{buildroot}
-%{__install} -Dpm 755 utils/nvme_stat %{buildroot}/%{_bindir}/nvme_stat
-%{__install} -Dpm 755 utils/ssd2gpu_test %{buildroot}/%{_bindir}/ssd2gpu_test
-%{__install} -Dpm 755 utils/ssd2ram_test %{buildroot}/%{_bindir}/ssd2ram_test
+%{__install} -Dpm 0755 utils/nvme_stat %{buildroot}/%{_bindir}/nvme_stat
+%{__install} -Dpm 0755 utils/ssd2gpu_test %{buildroot}/%{_bindir}/ssd2gpu_test
+%{__install} -Dpm 0755 utils/ssd2ram_test %{buildroot}/%{_bindir}/ssd2ram_test
+%{__install} -Dpm 4755 utils/nvme_strom-modprobe %{buildroot}/%{_bindir}/nvme_strom-modprobe
 
 %{__make} -C kmod install-dkms \
     NVME_STROM_VERSION=%{version}-%{release} \
@@ -62,6 +63,7 @@ fi
 %{_bindir}/nvme_stat
 %{_bindir}/ssd2gpu_test
 %{_bindir}/ssd2ram_test
+%{_bindir}/nvme_strom-modprobe
 %dir %{_usrsrc}/%{name}-%{version}
 %{_usrsrc}/%{name}-%{version}/*
 %config %{_sysconfdir}/modules-load.d/nvme_strom.conf

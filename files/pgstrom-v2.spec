@@ -23,8 +23,13 @@ Requires: postgresql%{PGSQL_PKGVER}-server >= 10.4
 Requires: postgresql%{PGSQL_PKGVER}-server
 %endif
 %endif
+Obsoletes: nvme_strom < 1.2
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 AutoReqProv: no
+
+%package test
+Summay: PG-Strom related test tools and scripts
+Group: Development/System
 
 %define __pg_config     /usr/pgsql-@@PGSQL_VERSION@@/bin/pg_config
 %define __pkglibdir     %(%{__pg_config} --pkglibdir)
@@ -36,6 +41,9 @@ AutoReqProv: no
 %description
 PG-Strom is an extension for PostgreSQL, to accelerate analytic queries
 towards large data set using the capability of GPU devices.
+
+%description test
+This package provides test tools and scripts related to PG-Strom
 
 %prep
 %setup -q -n @@STROM_TARBALL@@
@@ -65,5 +73,9 @@ ldconfig
 %{__pkgbindir}/gpuinfo
 %{__pkgsharedir}/extension/*
 %config %{__systemd_conf}
+
+%files
+%{__pkgbindir}/dbgen-dbt3
+%{__pkgbindir}/dbgen-ssbm
 
 %changelog
