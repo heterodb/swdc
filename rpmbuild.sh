@@ -54,6 +54,8 @@ do
   PKGNAME=`rpm -qp --queryformat='%{name}' "$fname" 2>/dev/null`
   if echo $PKGNAME | grep -Eq '^pg_strom-PG[0-9]+'; then
     PKGNAME="pg_strom"
+  elif [ "$PKGNAME" != "nvme_strom" ]; then
+    continue
   fi
   PKGVER=`rpm -qp --queryformat='%{version}-%{release}' "$fname" 2>/dev/null`
 
@@ -70,55 +72,7 @@ do
 done
 
 #
-# Post rpmbuild steps
+# Update Web Site
 #
-
-# update yum repository
-for d in docs/yum/*/repodata;
-do
-  createrepo --simple-md-filenames --update `dirname $d`
-done
-
-TEMP=`mktemp -d`
-# update index file (heterodb-swdc)
-HTML="$TEMP/rpm_heterodb-swdc.list"
-echo "<ul>" > $HTML
-for x in `ls docs/yum/*/heterodb-swdc-*.noarch.rpm`
-do
-  ALINK=`echo $x | sed 's/^docs/./g'`
-  FNAME=`basename $x`
-  echo "<li><a href=\"$ALINK\">$FNAME</a></li>" >> $HTML
-done
-echo "</ul>" >> $HTML
-
-# update index file (pg-strom)
-HTML="$TEMP/tgz_pg-strom.list"
-echo "<ul>" > $HTML
-for x in `ls docs/tgz/pg_strom-*.tar.gz`
-do
-  ALINK=`echo $x | sed 's/^docs/./g'`
-  FNAME=`basename $x`
-  echo "<li><a href=\"$ALINK\">$FNAME</a></li>" >> $HTML
-done
-echo "</ul>" >> $HTML
-
-# update index files (all RPM files)
-HTML="$TEMP/all_rpm_files.list"
-echo "<ul>" > $HTML
-for dir in `ls -dr docs/yum/*`
-do
-  (echo "<li><b>`basename $dir`</b>"
-   echo "  <ul>") >> $HTML
-  for x in `ls $dir/*.rpm`
-  do
-    ALINK=`echo $x | sed 's/^docs/./g'`
-    FNAME=`basename $x`
-    echo "  <li><a href=\"$ALINK\">$FNAME</a></li>" >> $HTML
-  done
-  (echo "  </ul>"
-   echo "</li>") >> $HTML
-done
-echo "</ul>" >> $HTML
-cpp -I $TEMP -E files/index.html.template | grep -v ^# > docs/index.html
-rm -rf $TEMP
+./update-index.sh
 exit 0
