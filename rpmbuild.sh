@@ -45,23 +45,19 @@ do
       break;
     fi
   done
-  if [ "`cat $FOUND`" = "found" ]; then
-      echo "$fname should be kept"
-  fi
+  test "`cat $FOUND`" = "found" || git rm -f "$fname"
   rm -f $FOUND
 done
 
 git ls-files docs/yum | grep '\.rpm$' | while read fname
 do
-  PKGNAME=`rpm -qp --queryformat='%{name}' "$fname"`
-  if echo $PKGNAME | grep -Eq '^pg_strom-PG[0-9]+$'; then
+  PKGNAME=`rpm -qp --queryformat='%{name}' "$fname" 2>/dev/null`
+  if echo $PKGNAME | grep -Eq '^pg_strom-PG[0-9]+'; then
     PKGNAME="pg_strom"
   fi
-  PKGVER=`rpm -qp --queryformat='%{version}-%{release}' "$fname"`
+  PKGVER=`rpm -qp --queryformat='%{version}-%{release}' "$fname" 2>/dev/null`
 
-#  echo "PKGNAME $PKGNAME, PKGVER $PKGVER"
   FOUND=`mktemp`
-
   grep -v '^#'  RPMVERSIONS | while read NAME VERSION HASH
   do
     if [ "$PKGNAME" = "$NAME" -a "$PKGVER" = "${VERSION}${DIST}" ]; then
@@ -69,63 +65,60 @@ do
       break;
     fi
   done
-  if [ "`cat $FOUND`" = "found" ]; then
-      echo "$fname should be kept"
-  fi
+  test "`cat $FOUND`" = "found" || git rm -f "$fname"
   rm -f $FOUND
 done
 
 #
 # Post rpmbuild steps
 #
-if [ $ANY_NEW_PACKAGES -ne 0 ]; then
-  # update yum repository
-  for d in docs/yum/*/repodata;
-  do
-    createrepo --simple-md-filenames --update `dirname $d`
-  done
 
-  TEMP=`mktemp -d`
-  # update index file (heterodb-swdc)
-  HTML="$TEMP/rpm_heterodb-swdc.list"
-  echo "<ul>" > $HTML
-  for x in `ls docs/yum/*/heterodb-swdc-*.noarch.rpm`
+# update yum repository
+for d in docs/yum/*/repodata;
+do
+  createrepo --simple-md-filenames --update `dirname $d`
+done
+
+TEMP=`mktemp -d`
+# update index file (heterodb-swdc)
+HTML="$TEMP/rpm_heterodb-swdc.list"
+echo "<ul>" > $HTML
+for x in `ls docs/yum/*/heterodb-swdc-*.noarch.rpm`
+do
+  ALINK=`echo $x | sed 's/^docs/./g'`
+  FNAME=`basename $x`
+  echo "<li><a href=\"$ALINK\">$FNAME</a></li>" >> $HTML
+done
+echo "</ul>" >> $HTML
+
+# update index file (pg-strom)
+HTML="$TEMP/tgz_pg-strom.list"
+echo "<ul>" > $HTML
+for x in `ls docs/tgz/pg_strom-*.tar.gz`
+do
+  ALINK=`echo $x | sed 's/^docs/./g'`
+  FNAME=`basename $x`
+  echo "<li><a href=\"$ALINK\">$FNAME</a></li>" >> $HTML
+done
+echo "</ul>" >> $HTML
+
+# update index files (all RPM files)
+HTML="$TEMP/all_rpm_files.list"
+echo "<ul>" > $HTML
+for dir in `ls -dr docs/yum/*`
+do
+  (echo "<li><b>`basename $dir`</b>"
+   echo "  <ul>") >> $HTML
+  for x in `ls $dir/*.rpm`
   do
     ALINK=`echo $x | sed 's/^docs/./g'`
     FNAME=`basename $x`
-    echo "<li><a href=\"$ALINK\">$FNAME</a></li>" >> $HTML
+    echo "  <li><a href=\"$ALINK\">$FNAME</a></li>" >> $HTML
   done
-  echo "</ul>" >> $HTML
-
-  # update index file (pg-strom)
-  HTML="$TEMP/tgz_pg-strom.list"
-  echo "<ul>" > $HTML
-  for x in `ls docs/tgz/pg_strom-*.tar.gz`
-  do
-    ALINK=`echo $x | sed 's/^docs/./g'`
-    FNAME=`basename $x`
-    echo "<li><a href=\"$ALINK\">$FNAME</a></li>" >> $HTML
-  done
-  echo "</ul>" >> $HTML
-
-  # update index files (all RPM files)
-  HTML="$TEMP/all_rpm_files.list"
-  echo "<ul>" > $HTML
-  for dir in `ls -dr docs/yum/*`
-  do
-    (echo "<li><b>`basename $dir`</b>"
-     echo "  <ul>") >> $HTML
-    for x in `ls $dir/*.rpm`
-    do
-      ALINK=`echo $x | sed 's/^docs/./g'`
-      FNAME=`basename $x`
-      echo "  <li><a href=\"$ALINK\">$FNAME</a></li>" >> $HTML
-    done
-    (echo "  </ul>"
-     echo "</li>") >> $HTML
-  done
-  echo "</ul>" >> $HTML
-  cpp -I $TEMP -E files/index.html.template | grep -v ^# > docs/index.html
-  rm -rf $TEMP
-fi
+  (echo "  </ul>"
+   echo "</li>") >> $HTML
+done
+echo "</ul>" >> $HTML
+cpp -I $TEMP -E files/index.html.template | grep -v ^# > docs/index.html
+rm -rf $TEMP
 exit 0

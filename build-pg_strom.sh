@@ -10,8 +10,6 @@ GITHASH="$2"
 GITDIR="pg-strom"
 PGSQL_VERSIONS="9.6 10"
 
-echo "[$INSTALL]"
-
 test -n "$VERSION" -a -n "$GITHASH" || abort "VERSION and GITHASH are missing"
 test -e "$GITDIR/.git" || abort "'$GITDIR' is not git repository"
 (cd "$GITDIR"; git pull) || abort "failed on git pull"
