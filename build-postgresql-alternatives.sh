@@ -7,12 +7,13 @@ cd `dirname $0`
 #--------------------------------
 mkdir -p ${SRCDIR}
 rm -rf ${RPMDIR}/*
-RPMFILE="`rpmspec --rpms -q files/heterodb-swdc.spec`.rpm"
+VERSION=`rpmspec --qf %{version} -q files/postgresql-alternatives.spec`
+RELEASE=`rpmspec --qf %{release} -q files/postgresql-alternatives.spec`
 ARCH=noarch
+RPMFILE="`rpmspec --rpms -q files/postgresql-alternatives.spec`.rpm"
 
-cp -f files/heterodb-swdc.repo files/RPM-GPG-KEY-HETERODB ${SRCDIR}
-cp -f files/heterodb-swdc.spec ${SPECDIR}
-SPECFILE=heterodb-swdc.spec
+SPECFILE=postgresql-alternatives.spec
+cp -f files/${SPECFILE} ${SPECDIR}
 
 rpmbuild -ba ${SPECDIR}/${SPECFILE} || (echo "filed on rpmbuild"; exit 1)
 test -e "$RPMDIR/noarch/${RPMFILE}" || (echo "RPM files missing"; exit 1)
