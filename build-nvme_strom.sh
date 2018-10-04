@@ -42,9 +42,11 @@ RPMFILES=`rpmspec --rpms -q ${SPECDIR}/nvme_strom.spec`
  git archive --format=tar.gz \
              --prefix=nvme_strom-${NVME_TARBALL}/ \
              -o ${SRCDIR}/nvme_strom-${NVME_TARBALL}.tar.gz \
-             ${GITHASH} kmod utils MASTER_LICENSE_KEY LICENSE)
-cat files/nvme_strom.dkms.conf | \
-  sed -e "s/@@NVME_STROM_VERSION@@/${NVME_VERSION}/g" > ${SRCDIR}/dkms.conf
+             ${GITHASH} kmod rdmax utils MASTER_LICENSE_KEY LICENSE)
+cat files/strom.dkms.conf | \
+  sed -e "s/@@NVME_STROM_VERSION@@/${NVME_VERSION}/g" > ${SRCDIR}/strom.dkms.conf
+cat files/rdmax.dkms.conf | \
+  sed -e "s/@@NVME_STROM_VERSION@@/${NVME_VERSION}/g" > ${SRCDIR}/rdmax.dkms.conf
 rpmbuild -ba ${SPECDIR}/nvme_strom.spec || abort "rpmbuild failed"
 for f in $RPMFILES;
 do
