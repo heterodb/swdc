@@ -16,6 +16,8 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 nvme-strom is a kernel module to intermediates SSD-to-GPU peer-to-peer DMA
 under PG-Strom.
 
+%define rdmax		rdmax
+
 %prep
 %setup -q -n %{name}-@@NVME_TARBALL@@
 
@@ -55,14 +57,26 @@ then
     /usr/sbin/dkms remove -m %{name} -v %{version} --all
 fi
 /usr/sbin/dkms add -m %{name} -v %{version}
-/usr/sbin/dkms build -m %{name} -v %{version}
-/usr/sbin/dkms install -m %{name} -v %{version}
+/usr/sbin/dkms build -m %{name} -v %{version} && \
+/usr/sbin/dkms install -m %{name} -v %{version} || \
+    echo "notice: %{name} -v %{version} might be manually installed."
+
+# also install rdmax module
+count=`/usr/sbin/dkms status '%{rdmax}/%{version}' | wc -l`
+if [ count > 0 ];
+then
+    /usr/sbin/dkms remove -m %{rdmax} -v %{version} --all
+fi
+/usr/sbin/dkms add -m %{rdmax} -v %{version}
+/usr/sbin/dkms build -m %{rdmax} -v %{version} && \
+/usr/sbin/dkms install -m %{rdmax} -v %{version} || \
+    echo "notice: %{rdmax} -v %{version} might be manually installed."
 
 %preun
 /usr/sbin/dkms remove -m %{name} -v %{version} --all || \
 	echo "notice: %{name} -v %{version} might be manually removed."
-/usr/sbin/dkms remove -m rdmax -v %{version} --all || \
-	echo "notice: %{name} -v %{version} might be manually removed."
+/usr/sbin/dkms remove -m %{rdmax} -v %{version} --all || \
+	echo "notice: %{rdmax} -v %{version} might be manually removed."
 
 %files
 %defattr(-,root,root,-)
@@ -71,7 +85,8 @@ fi
 %{_bindir}/nvme_strom-modprobe
 %dir %{_usrsrc}/%{name}-%{version}
 %{_usrsrc}/%{name}-%{version}/*
-%{_usrsrc}/rdmax-%{version}/*
+%dir %{_usrsrc}/%{rdmax}-%{version}
+%{_usrsrc}/%{rdmax}-%{version}/*
 %config %{_sysconfdir}/modules-load.d/nvme_strom.conf
 %config %{_sysconfdir}/modprobe.d/nvme_strom.conf
 
