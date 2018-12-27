@@ -73,6 +73,9 @@ ldconfig
 %{__pkgbindir}/gpuinfo
 %{__pkgsharedir}/extension/*
 %config %{__systemd_conf}
+%if "%{PGSQL_PKGVER}" != "96" && "%{PGSQL_PKGVER}" != "10"
+%{__pkglibdir}/bitcode/pg_strom*
+%endif
 
 %files test
 %{__pkgbindir}/dbgen-dbt3
