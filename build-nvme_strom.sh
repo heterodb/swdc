@@ -19,35 +19,16 @@ mkdir -p ${SRCDIR}
 rm -rf ${RPMDIR}/*
 
 set -- `echo "$VERSION" | tr '-' ' '`
-NVME_VERSION=$1
-NVME_RELEASE=$2
-test -n "$NVME_VERSION" -a -n "$NVME_RELEASE" || \
-    abort "nvme_strom: wrong version(${NVME_VERSION}) and release(${NVME_RELEASE})"
+STROM_VERSION=$1
+STROM_RELEASE=$2
 
-if [ ${#NVME_RELEASE} -le 1 ]; then
-  NVME_TARBALL="${NVME_VERSION}"
-else
-  NVME_TARBALL="${NVME_VERSION}-${NVME_RELEASE}"
-fi
-
-(cat files/nvme_strom.spec | \
-     sed -e "s/@@NVME_VERSION@@/${NVME_VERSION}/g" \
-         -e "s/@@NVME_RELEASE@@/${NVME_RELEASE}/g" \
-         -e "s/@@NVME_TARBALL@@/${NVME_TARBALL}/g";
- cd $GITDIR; git show ${GITHASH}:CHANGELOG) > ${SPECDIR}/nvme_strom.spec
+make -C "$GITDIR" \
+    STROM_VERSION=${STROM_VERSION} \
+    STROM_RELEASE=${STROM_RELEASE} \
+    STROM_GITHASH=${GITHASH} rpm || \
+    abort "failed on 'make rpm' for '${STROM_VERSION}-${STROM_RELEASE}' on '${GITHASH}'"
 
 RPMFILES=`rpmspec --rpms -q ${SPECDIR}/nvme_strom.spec`
-
-(cd "$GITDIR"; \
- git archive --format=tar.gz \
-             --prefix=nvme_strom-${NVME_TARBALL}/ \
-             -o ${SRCDIR}/nvme_strom-${NVME_TARBALL}.tar.gz \
-             ${GITHASH} kmod rdmax utils MASTER_LICENSE_KEY LICENSE)
-cat files/strom.dkms.conf | \
-  sed -e "s/@@NVME_STROM_VERSION@@/${NVME_VERSION}/g" > ${SRCDIR}/strom.dkms.conf
-cat files/rdmax.dkms.conf | \
-  sed -e "s/@@NVME_STROM_VERSION@@/${NVME_VERSION}/g" > ${SRCDIR}/rdmax.dkms.conf
-rpmbuild -ba ${SPECDIR}/nvme_strom.spec || abort "rpmbuild failed"
 for f in $RPMFILES;
 do
   test -e "$RPMDIR/${ARCH}/${f}.rpm" || abort "missing RPM file"

@@ -15,70 +15,59 @@ test -e "$GITDIR/.git" || abort "'$GITDIR' is not git repository"
 (cd "$GITDIR"; git pull) || abort "failed on git pull"
 [ `(cd "$GITDIR"; git diff) | wc -l` -eq 0 ] || abort "$GITDIR has local changes"
 
-#--------------------------------
 mkdir -p ${SRCDIR}
 rm -rf ${RPMDIR}/*
 
 set -- `echo "$VERSION" | tr '-' ' '`
 STROM_VERSION=$1
 STROM_RELEASE=$2
-test -n "$STROM_VERSION" -a -n "$STROM_RELEASE" || \
-    abort "pg_strom: wrong version(${STROM_VERSION}) and release(${STROM_RELEASE})"
-
-if [ ${#STROM_RELEASE} -le 1 ]; then
-  TGZ_VERSION="${STROM_VERSION}"
-else
-  TGZ_VERSION="${STROM_VERSION}-${STROM_RELEASE}"
-fi
-STROM_TARBALL="pg_strom-${TGZ_VERSION}"
-
-for pgver in $PGSQL_VERSIONS
+for PVER in $PGSQL_VERSIONS
 do
-  PVNUM=`echo $pgver | sed 's/\.//g'`
-  SPECFILE="pg_strom-PG${PVNUM}.spec"
-  (cat files/pgstrom-v2.spec | \
-     sed -e "s/@@STROM_VERSION@@/${STROM_VERSION}/g" \
-         -e "s/@@STROM_RELEASE@@/${STROM_RELEASE}/g" \
-         -e "s/@@STROM_TARBALL@@/${STROM_TARBALL}/g" \
-         -e "s/@@PGSQL_VERSION@@/${pgver}/g";
-   cd $GITDIR; git show ${GITHASH}:CHANGELOG) > ${SPECDIR}/${SPECFILE}
-  cp files/systemd-pg_strom.conf ${SRCDIR}
+  SPECFILE="pg_strom-PG${PVER}.spec"
+  make -C "${GITDIR}" \
+      PG_CONFIG=/usr/pgsql-${PVER}/bin/pg_config \
+      PGSTROM_VERSION=${STROM_VERSION} \
+      PGSTROM_RELEASE=${STROM_RELEASE} \
+      PGSTROM_GITHASH=${GITHASH} rpm
+
   RPMFILES=`rpmspec --rpms -q ${SPECDIR}/${SPECFILE}`
   SRPMFILE=`rpmspec --srpm -q ${SPECDIR}/${SPECFILE} | sed "s/${ARCH}\$/src.rpm/g"`
-
-  env PATH=/usr/pgsql-${pgver}/bin:$PATH \
-    make -C $GITDIR tarball PGSTROM_VERSION="${TGZ_VERSION}" PGSTROM_GITHASH="${GITHASH}"
-  cp -f "$GITDIR/${STROM_TARBALL}.tar.gz" ${SRCDIR}
-  env PATH=/usr/pgsql-${pgver}/bin:$PATH \
-    rpmbuild -ba ${SPECDIR}/${SPECFILE} || abort "rpmbuild failed"
-
   for f in $RPMFILES;
   do
     test -e "$RPMDIR/${ARCH}/${f}.rpm" || abort "missing RPM file"
     if [ -x ~/rpmsign.sh ]; then
       ~/rpmsign.sh "$RPMDIR/${ARCH}/${f}.rpm" || abort "failed on rpmsign.sh"
     fi
-  done
-  test -e "$SRPMDIR/${SRPMFILE}" || abort "missing SRPM file"
-  if [ -x ~/rpmsign.sh ]; then
-    ~/rpmsign.sh "$SRPMDIR/${SRPMFILE}" || abort "failed on rpmsign.sh"
-  fi
-
-  if [ "$INSTALL" -ne 0 ]; then
-    for f in $RPMFILES;
-    do
+    if [ "$INSTALL" -ne 0 ]; then
       if echo "$f" | grep -q 'debuginfo'; then
-	DEST="docs/yum/${DISTRO}-debuginfo"
+        DEST="docs/yum/${DISTRO}-debuginfo"
       else
         DEST="docs/yum/${DISTRO}-${ARCH}"
       fi
       cp -f "$RPMDIR/${ARCH}/${f}.rpm" "$DEST" || abort "failed on copy"
       git add "${DEST}/${f}.rpm" || abort "failed on git add"
-    done
-    cp -f "$SRPMDIR/${SRPMFILE}" "docs/yum/${DISTRO}-source"
-    git add "docs/yum/${DISTRO}-source/${SRPMFILE}"
-    cp -f "${SRCDIR}/${STROM_TARBALL}.tar.gz" "docs/tgz"
-    git add "docs/tgz/${STROM_TARBALL}.tar.gz"
+    fi
+  done
+
+  for f in $SRPMFILE;
+  do
+    test -e "$SRPMDIR/${f}" || abort "missing SRPM file"
+    if [ -x ~/rpmsign.sh ]; then
+      ~/rpmsign.sh "$SRPMDIR/${f}" || "failed on rpmsign.sh"
+    fi
+    if [ "$INSTALL" -ne 0 ]; then
+      cp -f "$SRPMDIR/${f}" "docs/yum/${DISTRO}-source" || abort "failed on copy"
+      git add "docs/yum/${DISTRO}-source/${f}" || abort "failed on git add"
+    fi
+  done
+
+  if [ "${STROM_RELEASE}" -le 1 ]; then
+    TARBALL="pg_strom-${STROM_VERSION}.tar.gz"
+  else
+    TARBALL="pg_strom-${STROM_VERSION}-${STROM_RELEASE}.tar.gz"
   fi
+  cp -f ${SRCDIR}/${TARBALL} docs/tgz || abort "failed on copy"
+  git add docs/tgz/${TARBALL} || "failed on git add"
 done
+
 exit 0
