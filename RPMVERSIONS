@@ -1,13 +1,12 @@
 #
 # nvme_strom
 #
-nvme_strom	1.9-5		v1.9.5
-nvme_strom	1.4-2		v1.4.1
+nvme_strom	2.0-1		v2.0
 
 #
 # pg_strom
 #
 pg_strom	2.0-1		v2.0
-pg_strom	2.0-181106	278a0781063df3a6802450215f89fdba7a5c42db
-pg_strom	2.0-181227	e8af1638c87eb402365e9aba8f16cf6894e821bb
+pg_strom	2.1-2		6748f6b2a5499a34c3ea861134a0b50528280b3a
+
 
