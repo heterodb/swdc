@@ -8,7 +8,7 @@ cd `dirname $0`
 mkdir -p ${SRCDIR}
 rm -rf ${RPMDIR}/*
 RPMFILE="`rpmspec --rpms -q files/heterodb-swdc.spec`.rpm"
-ARCH=noarch
+ARCH_LIST=x86_64
 
 cp -f files/heterodb-swdc.repo files/RPM-GPG-KEY-HETERODB ${SRCDIR}
 cp -f files/heterodb-swdc.spec ${SPECDIR}
@@ -21,8 +21,11 @@ then
   ~/rpmsign.sh "$RPMDIR/noarch/${RPMFILE}" || (echo "failed on rpmsign.sh"; exit 1)
 fi
 if [ "$INSTALL" -ne 0 ]; then
-  cp -f "$RPMDIR/noarch/${RPMFILE}" "docs/yum/${DISTRO}-${ARCH}/" || exit 1
-  git add "docs/yum/${DISTRO}-${ARCH}/${RPMFILE}" || exit 1
+  for ARCH in ${ARCH_LIST}
+  do
+    cp -f "$RPMDIR/noarch/${RPMFILE}" "docs/yum/${DISTRO}-${ARCH}/" || exit 1
+    git add "docs/yum/${DISTRO}-${ARCH}/${RPMFILE}" || exit 1
+  done
 else
   echo "NOTICE: installation onto docs/ was skipped"
 fi
