@@ -51,6 +51,11 @@ ln -sf /usr/pgsql-current/bin/pg_resetwal       %{__localbindir}/pg_resetwal
 ln -sf /usr/pgsql-current/bin/postgres          %{__localbindir}/postgres
 ln -sf /usr/pgsql-current/bin/postmaster        %{__localbindir}/postmaster
 
+# pg_strom-PGXX packages
+ln -sf /usr/pgsql-current/bin/gpuinfo		%{__localbindir}/gpuinfo
+ln -sf /usr/pgsql-current/bin/pg2arrow		%{__localbindir}/pg2arrow
+ln -sf /usr/pgsql-current/bin/dbgen-ssbm	%{__localbindir}/dbgen-ssbm
+
 %postun
 if [ $1 = 0 ]; then
   for d in `alternatives --display pgsql | grep ^/usr/pgsql- | awk '{print $1}'`;
@@ -143,6 +148,66 @@ if [ $2 -eq 0 ]; then
   alternatives --remove pgsql /usr/pgsql-15 || exit 0
 fi
 
+%triggerin -- postgresql16
+if [ $2 -gt 0 ]; then
+  alternatives --install /usr/pgsql-current pgsql /usr/pgsql-16 160 \
+               --slave   /var/lib/pgdata pgdata /var/lib/pgsql/16/data \
+               --slave   /var/lib/pgbackups pgbackups /var/lib/pgsql/16/backups || exit 0
+fi
+
+%triggerpostun -- postgresql16
+if [ $2 -eq 0 ]; then
+  alternatives --remove pgsql /usr/pgsql-16 || exit 0
+fi
+
+%triggerin -- postgresql17
+if [ $2 -gt 0 ]; then
+  alternatives --install /usr/pgsql-current pgsql /usr/pgsql-17 170 \
+               --slave   /var/lib/pgdata pgdata /var/lib/pgsql/17/data \
+               --slave   /var/lib/pgbackups pgbackups /var/lib/pgsql/17/backups || exit 0
+fi
+
+%triggerpostun -- postgresql17
+if [ $2 -eq 0 ]; then
+  alternatives --remove pgsql /usr/pgsql-17 || exit 0
+fi
+
+%triggerin -- postgresql18
+if [ $2 -gt 0 ]; then
+  alternatives --install /usr/pgsql-current pgsql /usr/pgsql-18 180 \
+               --slave   /var/lib/pgdata pgdata /var/lib/pgsql/18/data \
+               --slave   /var/lib/pgbackups pgbackups /var/lib/pgsql/18/backups || exit 0
+fi
+
+%triggerpostun -- postgresql18
+if [ $2 -eq 0 ]; then
+  alternatives --remove pgsql /usr/pgsql-18 || exit 0
+fi
+
+%triggerin -- postgresql19
+if [ $2 -gt 0 ]; then
+  alternatives --install /usr/pgsql-current pgsql /usr/pgsql-19 190 \
+               --slave   /var/lib/pgdata pgdata /var/lib/pgsql/19/data \
+               --slave   /var/lib/pgbackups pgbackups /var/lib/pgsql/19/backups || exit 0
+fi
+
+%triggerpostun -- postgresql19
+if [ $2 -eq 0 ]; then
+  alternatives --remove pgsql /usr/pgsql-19 || exit 0
+fi
+
+%triggerin -- postgresql20
+if [ $2 -gt 0 ]; then
+  alternatives --install /usr/pgsql-current pgsql /usr/pgsql-20 200 \
+               --slave   /var/lib/pgdata pgdata /var/lib/pgsql/20/data \
+               --slave   /var/lib/pgbackups pgbackups /var/lib/pgsql/20/backups || exit 0
+fi
+
+%triggerpostun -- postgresql20
+if [ $2 -eq 0 ]; then
+  alternatives --remove pgsql /usr/pgsql-20 || exit 0
+fi
+
 %files
 %defattr(-,root,root,-)
 # postgresqlXX packages
@@ -177,7 +242,14 @@ fi
 %{localbindir}/postgres
 %{localbindir}/postmaster
 
+# pg_strom-PGXX packages
+%{localbindir}/gpuinfo
+%{localbindir}/pg2arrow
+%{localbindir}/dbgen-ssbm
 
 %changelog
+* Tue Sep  3 2019 KaiGai Kohei <kaigai@heterodb.com> 1.1-1
+- add PG-Strom related commands
+
 * Sun Feb 25 2018 KaiGai Kohei <kaigai@heterodb.com> 1.0-1
 - initial release
