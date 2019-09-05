@@ -1,5 +1,5 @@
 Name: postgresql-alternatives
-Version: 1.0
+Version: 1.1
 Release: 1%{?dist}
 Summary: alternatives configuration for PostgreSQL
 Group: Applications/Databases
