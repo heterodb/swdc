@@ -21,6 +21,8 @@ DIST=`rpmbuild -E '%{dist}' | sed 's/\.centos//g'`
 ARCH=`uname -m`
 if echo "$DIST" | grep -q '^\.el7'; then
   DISTRO="rhel7"
+elif echo "$DIST" | grep -q '^\.el8'; then
+  DISTRO="rhel8"
 else
   echo "unknown Linux distribution"
   exit 1
