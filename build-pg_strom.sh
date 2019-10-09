@@ -8,7 +8,8 @@ cd `dirname $0`
 VERSION="$1"
 GITHASH="$2"
 GITDIR="pg-strom"
-PGSQL_VERSIONS="9.6 10 11"
+#PGSQL_VERSIONS="9.6 10 11"
+PGSQL_VERSIONS="10 11"
 
 test -n "$VERSION" -a -n "$GITHASH" || abort "VERSION and GITHASH are missing"
 test -e "$GITDIR/.git" || abort "'$GITDIR' is not git repository"
