@@ -15,6 +15,10 @@ test -e "$GITDIR/.git" || abort "'$GITDIR' is not git repository"
 (cd "$GITDIR"; git pull) || abort "failed on git pull"
 [ `(cd "$GITDIR"; git diff) | wc -l` -eq 0 ] || abort "$GITDIR has local changes"
 (cd "$GITDIR"; git clean -fdx)
+__PGSQL_VERSIONS=`(cd "$GITDIR"; git show $GITHASH:PG_VERSIONS)`
+if [ -n "$__PGSQL_VERSIONS" ]; then
+  PGSQL_VERSIONS="$__PGSQL_VERSIONS"
+fi
 
 __PGSQL_VERSIONS=`cd "$GITDIR"; git show $GITHASH:PG_VERSIONS 2>/dev/null`
 if [ -n "${__PGSQL_VERSIONS}" ]; then
