@@ -42,9 +42,6 @@ do
     else
       DEST="docs/yum/${DISTRO}-${ARCH}"
     fi
-echo "SRC=[$RPMDIR/${ARCH}/${f}.rpm]"
-echo "DEST=[$DEST]"
-
     cp -f $RPMDIR/${ARCH}/${f}.rpm ${DEST} || exit 1
     git add ${DEST}/${f}.rpm || exit 1
   fi
