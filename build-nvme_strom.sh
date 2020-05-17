@@ -44,7 +44,7 @@ do
     fi
     cp -f $RPMDIR/${ARCH}/${f}.rpm ${DEST} || exit 1
     git add ${DEST}/${f}.rpm || exit 1
-    echo "'${f}' is deployed to '${DEST}'"
+    echo "installed '${f}' --> '${DEST}'"
   fi
 done
 exit 0
