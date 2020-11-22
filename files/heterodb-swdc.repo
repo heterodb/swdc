@@ -1,20 +1,20 @@
 [heterodb]
 name=HeteroDB Software Distribution Center $releasever - $basearch
-baseurl=https://heterodb.github.io/swdc/yum/rhel7-$basearch
+baseurl=https://heterodb.github.io/swdc/yum/rhel$releasever-$basearch
 enabled=1
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-HETERODB
 
 [heterodb-source]
 name=HeteroDB Software Distribution Center $releasever - $basearch
-baseurl=https://heterodb.github.io/swdc/yum/rhel7-source
+baseurl=https://heterodb.github.io/swdc/yum/rhel$releasever-source
 enabled=0
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-HETERODB
 
 [heterodb-debuginfo]
 name=HeteroDB Software Distribution Center $releasever - $basearch
-baseurl=https://heterodb.github.io/swdc/yum/rhel7-debuginfo
+baseurl=https://heterodb.github.io/swdc/yum/rhel$releasever-debuginfo
 enabled=0
 gpgcheck=1
 gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-HETERODB

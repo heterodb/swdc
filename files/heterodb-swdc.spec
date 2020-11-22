@@ -1,5 +1,5 @@
 Name:      heterodb-swdc
-Version:   1.0
+Version:   1.1
 Release:   1%{?dist}
 Summary:   HeteroDB Software Distribution Center - Yum Repository Configuration
 Group:     System Environment/Base
@@ -40,5 +40,7 @@ Center for RHEL/CentOS.
 %{_sysconfdir}/pki/rpm-gpg/*
 
 %changelog
+* Sun Nov 11 2020 KaiGai Kohei <kaigai@heterodb.com> - 1.1
+- Both of RHEL7/8 refers correct repository based on $releasever and $basearch
 * Sat Jan 20 2018 KaiGai Kohei <kaigai@heterodb.com> - 1.0
 - Initial setup for the release of HeteroDB Software Distribution Center
