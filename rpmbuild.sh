@@ -10,7 +10,7 @@ UPDATE_INDEX=0	# set '1' if you want to update web-site
 #
 # Package Build
 #
-REBUILD_ALL=0	# set '1' if you want to rebuild all
+REBUILD_ALL=1	# set '1' if you want to rebuild all
 grep -v '^#'  RPMVERSIONS| while read NAME PKGVER PKGHASH
 do
   if [ "$NAME" = "nvme_strom" ]; then
