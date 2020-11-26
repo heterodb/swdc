@@ -26,5 +26,6 @@ nvme_strom	2.4-3		v2.4.3
 #pg_strom	2.2-2		6ec28701fcd7f127210939de0640b0df32fe9144
 #pg_strom	2.2-3		3e51dc224eef15c4d2f7a4f0fe10d01b52c47695
 #pg_strom	2.3-1		v2.3
+pg_strom	2.9-201126	599a0db09996458f61b71e94f31ad47f10b21fc5
 
 
