@@ -12,7 +12,7 @@
 #nvme_strom	2.4-2		5de874db4b08574379058ed6dfe9ede9bf9171b0
 #nvme_strom	2.4-3		v2.4.3
 #nvme_strom	2.5-1		v2.5
-nvme_strom	2.5-2		073014656a0217767bc893d1a847c32df6750c1d
+nvme_strom	2.5-2		691fc5a5fd0dc65b30411e9bc91aa3fc4da2ad00
 
 #
 # pg_strom
