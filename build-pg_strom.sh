@@ -45,9 +45,10 @@ do
   for f in $RPMFILES;
   do
     test -e "$RPMDIR/${ARCH}/${f}.rpm" || abort "missing RPM file"
-    if [ -x ~/rpmsign.sh ]; then
-      ~/rpmsign.sh "$RPMDIR/${ARCH}/${f}.rpm" || abort "failed on rpmsign.sh"
-    fi
+#    if [ -x ~/rpmsign.sh ]; then
+#      ~/rpmsign.sh "$RPMDIR/${ARCH}/${f}.rpm" || abort "failed on rpmsign.sh"
+#    fi
+    rpm --addsign "$RPMDIR/${ARCH}/${f}.rpm"
     if [ "$INSTALL" -ne 0 ]; then
       if echo "$f" | grep -q 'debuginfo'; then
         DEST="docs/yum/${DISTRO}-debuginfo"
@@ -62,9 +63,10 @@ do
   for f in $SRPMFILE;
   do
     test -e "$SRPMDIR/${f}" || abort "missing SRPM file"
-    if [ -x ~/rpmsign.sh ]; then
-      ~/rpmsign.sh "$SRPMDIR/${f}" || "failed on rpmsign.sh"
-    fi
+#    if [ -x ~/rpmsign.sh ]; then
+#      ~/rpmsign.sh "$SRPMDIR/${f}" || "failed on rpmsign.sh"
+#    fi
+    rpm --addsign "$SRPMDIR/${f}"
     if [ "$INSTALL" -ne 0 ]; then
       cp -f "$SRPMDIR/${f}" "docs/yum/${DISTRO}-source" || abort "failed on copy"
       git add "docs/yum/${DISTRO}-source/${f}" || abort "failed on git add"

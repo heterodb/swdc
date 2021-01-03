@@ -20,11 +20,14 @@ cp -f files/${SPECFILE} ${SPECDIR}
 
 rpmbuild -ba ${SPECDIR}/${SPECFILE} || (echo "filed on rpmbuild"; exit 1)
 test -e "$RPMDIR/noarch/${RPMFILE}" || (echo "RPM files missing"; exit 1)
-if [ -x ~/rpmsign.sh ];
-then
-  ~/rpmsign.sh "$RPMDIR/noarch/${RPMFILE}" || (echo "failed on rpmsign.sh"; exit 1)
-  ~/rpmsign.sh "$SRPMDIR/${SRPMFILE}" || (echo "failed on rpmsign.sh"; exit 1)
-fi
+#if [ -x ~/rpmsign.sh ];
+#then
+#  ~/rpmsign.sh "$RPMDIR/noarch/${RPMFILE}" || (echo "failed on rpmsign.sh"; exit 1)
+#  ~/rpmsign.sh "$SRPMDIR/${SRPMFILE}" || (echo "failed on rpmsign.sh"; exit 1)
+#fi
+rpm --addsign "$RPMDIR/noarch/${RPMFILE}"
+rpm --addsign "$SRPMDIR/${SRPMFILE}"
+
 if [ "$INSTALL" -ne 0 ]; then
   for ARCH in ${ARCH_LIST}
   do

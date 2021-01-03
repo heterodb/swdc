@@ -33,9 +33,10 @@ RPMFILES=`rpmspec --rpms -q ${SPECDIR}/nvme_strom.spec`
 for f in $RPMFILES;
 do
   test -e "$RPMDIR/${ARCH}/${f}.rpm" || abort "missing RPM file"
-  if [ -x ~/rpmsign.sh ]; then
-    ~/rpmsign.sh "$RPMDIR/${ARCH}/${f}.rpm" || abort "failed on rpmsign.sh"
-  fi
+#  if [ -x ~/rpmsign.sh ]; then
+#    ~/rpmsign.sh "$RPMDIR/${ARCH}/${f}.rpm" || abort "failed on rpmsign.sh"
+#  fi
+  rpm --addsign "$RPMDIR/${ARCH}/${f}.rpm"
   if [ "$INSTALL" -ne 0 ]; then
     if echo "$f" | grep -q 'debuginfo'; then
       DEST="docs/yum/${DISTRO}-debuginfo"
