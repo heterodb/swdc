@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # update yum repository
-for d in docs/yum/*/repodata;
+for d in docs/yum/rhel?-*/repodata;
 do
   createrepo --simple-md-filenames --update `dirname $d`
 done
@@ -10,7 +10,7 @@ TEMP=`mktemp -d`
 # update index file (heterodb-swdc)
 HTML="$TEMP/rpm_heterodb-swdc.list"
 echo "<ul>" > $HTML
-for x in `ls docs/yum/*/heterodb-swdc-*.noarch.rpm`
+for x in `ls docs/yum/rhel?-*/heterodb-swdc-*.noarch.rpm`
 do
   ALINK=`echo $x | sed 's/^docs/./g'`
   FNAME=`basename $x`
@@ -32,11 +32,11 @@ echo "</ul>" >> $HTML
 # update index files (all RPM files)
 HTML="$TEMP/all_rpm_files.list"
 echo "<ul>" > $HTML
-for dir in `ls -dr docs/yum/*`
+for dir in `ls -dr docs/yum/rhel?-*/`
 do
   (echo "<li><b>`basename $dir`</b>"
    echo "  <ul>") >> $HTML
-  for x in `ls $dir/*.rpm`
+  for x in `ls $dir/*.rpm --reverse`
   do
     ALINK=`echo $x | sed 's/^docs/./g'`
     FNAME=`basename $x`
