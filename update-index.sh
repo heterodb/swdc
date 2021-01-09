@@ -36,7 +36,7 @@ for dir in `ls -dr docs/yum/rhel?-*/`
 do
   (echo "<li><b>`basename $dir`</b>"
    echo "  <ul>") >> $HTML
-  for x in `ls $dir/*.rpm --reverse`
+  for x in `ls $dir/*.rpm`
   do
     ALINK=`echo $x | sed 's/^docs/./g'`
     FNAME=`basename $x`
