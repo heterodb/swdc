@@ -1,5 +1,5 @@
 Name:      heterodb-swdc
-Version:   1.1
+Version:   1.2
 Release:   1%{?dist}
 Summary:   HeteroDB Software Distribution Center - Yum Repository Configuration
 Group:     System Environment/Base
@@ -30,9 +30,6 @@ Center for RHEL/CentOS.
 %clean
 %{__rm} -rf %{buildroot}
 
-%post
-/bin/rpm --import %{_sysconfdir}/pki/rpm-gpg/RPM-GPG-KEY-HETERODB
-
 %files
 %defattr(-,root,root,-)
 %config %{_sysconfdir}/yum.repos.d/*
@@ -40,6 +37,8 @@ Center for RHEL/CentOS.
 %{_sysconfdir}/pki/rpm-gpg/*
 
 %changelog
+* Sun May 16 2021 KaiGai Kohei <kaigai@heterodb.com> - 1.2
+- Remove post-script; not a job of RPM installation
 * Sun Nov 11 2020 KaiGai Kohei <kaigai@heterodb.com> - 1.1
 - Both of RHEL7/8 refers correct repository based on $releasever and $basearch
 * Sat Jan 20 2018 KaiGai Kohei <kaigai@heterodb.com> - 1.0
