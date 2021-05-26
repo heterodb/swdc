@@ -7,6 +7,10 @@ do
 done
 
 TEMP=`mktemp -d`
+# time to update
+HTML="$TEMP/last_update.list"
+env LANG=C date > $HTML
+
 # update index file (heterodb-swdc)
 HTML="$TEMP/rpm_heterodb-swdc.list"
 echo "<ul>" > $HTML
@@ -46,6 +50,7 @@ do
    echo "</li>") >> $HTML
 done
 echo "</ul>" >> $HTML
+
 cpp -I $TEMP -E files/index.html.template | grep -v ^# > docs/index.html
 rm -rf $TEMP
 

@@ -4,6 +4,9 @@
 </head>
 <body>
 <h1>HeteroDB Software Distribution Center</h1>
+<div style="text-align: right; font-size: small; color: #505050; ">
+#include "last_update.list"
+</div>
 <hr>
 <h2>yum repository configurations</h2>
 #include "rpm_heterodb-swdc.list"
@@ -15,5 +18,9 @@
 <h2>All RPM Files</h2>
 #include "all_rpm_files.list"
 
+<br>
+<div style="text-align: center; color: #505050;">
+Copyright &copy; 2017-2021 HeteroDB,Inc. All Rights Reserved.
+</div>
 </body>
 </html>
