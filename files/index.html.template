@@ -4,7 +4,7 @@
 </head>
 <body>
 <h1>HeteroDB Software Distribution Center</h1>
-<div style="text-align: right; font-size: small; color: #505050; ">
+<div style="text-align: right; color: #505050; ">
 #include "last_update.list"
 </div>
 <hr>
@@ -18,7 +18,7 @@
 <h2>All RPM Files</h2>
 #include "all_rpm_files.list"
 
-<br>
+<hr>
 <div style="text-align: center; color: #505050;">
 Copyright &copy; 2017-2021 HeteroDB,Inc. All Rights Reserved.
 </div>

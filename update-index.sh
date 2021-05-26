@@ -9,7 +9,7 @@ done
 TEMP=`mktemp -d`
 # time to update
 HTML="$TEMP/last_update.list"
-env LANG=C date > $HTML
+echo "Last Update: `env LANG=C date`" > $HTML
 
 # update index file (heterodb-swdc)
 HTML="$TEMP/rpm_heterodb-swdc.list"
