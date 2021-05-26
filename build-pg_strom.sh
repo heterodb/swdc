@@ -8,7 +8,6 @@ cd `dirname $0`
 VERSION="$1"
 GITHASH="$2"
 GITDIR="pg-strom"
-PGSQL_VERSIONS="10 11"
 
 test -n "$VERSION" -a -n "$GITHASH" || abort "VERSION and GITHASH are missing"
 test -e "$GITDIR/.git" || abort "'$GITDIR' is not git repository"
@@ -18,11 +17,6 @@ test -e "$GITDIR/.git" || abort "'$GITDIR' is not git repository"
 __PGSQL_VERSIONS=`(cd "$GITDIR"; git show $GITHASH:PG_VERSIONS)`
 if [ -n "$__PGSQL_VERSIONS" ]; then
   PGSQL_VERSIONS="$__PGSQL_VERSIONS"
-fi
-
-__PGSQL_VERSIONS=`cd "$GITDIR"; git show $GITHASH:PG_VERSIONS 2>/dev/null`
-if [ -n "${__PGSQL_VERSIONS}" ]; then
-  PGSQL_VERSIONS="${__PGSQL_VERSIONS}"
 fi
 
 mkdir -p ${SRCDIR}

@@ -14,6 +14,7 @@
 #nvme_strom	2.5-1		v2.5
 #nvme_strom	2.5-2		691fc5a5fd0dc65b30411e9bc91aa3fc4da2ad00
 #nvme_strom	2.8-1		v2.8
+nvme_strom	2.9-1		1590f1e521340ffd13372642fdd92e7ad20f562d
 
 #
 # pg_strom
@@ -30,8 +31,8 @@
 #pg_strom	2.2-3		3e51dc224eef15c4d2f7a4f0fe10d01b52c47695
 #pg_strom	2.3-1		v2.3
 #pg_strom	2.9-201126	599a0db09996458f61b71e94f31ad47f10b21fc5
-pg_strom	2.9-210109	50b378ac16592379bc96df7e0d56dfc6ff61ecc6
-
+#pg_strom	2.9-210109	50b378ac16592379bc96df7e0d56dfc6ff61ecc6
+pg_strom	2.9-210526	de64872f3d1422acffba2de19d175279d81836e2
 
 
 
