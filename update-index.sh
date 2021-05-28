@@ -14,7 +14,7 @@ echo "Last Update: `env LANG=C date`" > $HTML
 # update index file (heterodb-swdc)
 HTML="$TEMP/rpm_heterodb-swdc.list"
 echo "<ul>" > $HTML
-for x in `ls docs/yum/rhel?-*/heterodb-swdc-*.noarch.rpm`
+for x in `ls docs/yum/rhel?-noarch/heterodb-swdc-*.noarch.rpm`
 do
   ALINK=`echo $x | sed 's/^docs/./g'`
   FNAME=`basename $x`
@@ -38,11 +38,13 @@ HTML="$TEMP/all_rpm_files.list"
 echo "<ul>" > $HTML
 for dir in `ls -dr docs/yum/rhel?-*/`
 do
+  (echo $dir | grep -q '\-noarch/$') && continue;
+
   (echo "<li><b>`basename $dir`</b>"
    echo "  <ul>") >> $HTML
-  for x in `ls $dir/*.rpm`
+  for x in `ls ${dir}*.rpm`
   do
-    ALINK=`echo $x | sed 's/^docs/./g'`
+    ALINK=`echo $x | sed -e 's|^docs/|./|g'`
     FNAME=`basename $x`
     echo "  <li><a href=\"$ALINK\">$FNAME</a></li>" >> $HTML
   done
