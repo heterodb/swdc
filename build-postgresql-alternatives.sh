@@ -29,6 +29,11 @@ fi
 if [ "$INSTALL" -ne 0 ]; then
   cp -f "$RPMDIR/noarch/${RPMFILE}" "docs/yum/${DISTRO}-noarch" || exit 1
   git add "docs/yum/${DISTRO}-noarch/${RPMFILE}" || exit 1
+  for ARCH in ${ARCH_LIST}
+  do
+    ln -sf "../noarch/${RPMFILE}" "docs/yum/${DISTRO}-${ARCH}/${RPMFILE}" || exit 1
+    git add "docs/yum/${DISTRO}-${ARCH}/${RPMFILE}" || exit 1
+  done
   cp -f "$SRPMDIR/${SRPMFILE}" "docs/yum/${DISTRO}-source" || exit 1
   git add "docs/yum/${DISTRO}-source/${SRPMFILE}" || exit 1
 else
