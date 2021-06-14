@@ -34,8 +34,8 @@ do
       PGSTROM_RELEASE=${STROM_RELEASE} \
       PGSTROM_GITHASH=${GITHASH} rpm
 
-  RPMFILES=`rpmspec --rpms -q ${SPECDIR}/${SPECFILE}`
-  SRPMFILE=`rpmspec --srpm -q ${SPECDIR}/${SPECFILE} | sed "s/${ARCH}\$/src.rpm/g"`
+  RPMFILES=`rpmspec -q --rpms --undefine=_debugsource_packages ${SPECDIR}/${SPECFILE}`
+  SRPMFILE=`rpmspec -q --srpm --undefine=_debugsource_packages ${SPECDIR}/${SPECFILE} | sed "s/${ARCH}\$/src.rpm/g"`
   for f in $RPMFILES;
   do
     test -e "$RPMDIR/${ARCH}/${f}.rpm" || abort "missing RPM file"
