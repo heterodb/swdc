@@ -26,9 +26,9 @@ test -z "$EXTRA_VERSION" && abort "version is missing"
 test -z "$EXTRA_RELEASE" && EXTRA_RELEASE=1
 
 make -C "$GITDIR" \
-    STROM_VERSION=${EXTRA_VERSION} \
-    STROM_RELEASE=${EXTRA_RELEASE} \
-    STROM_GITHASH=${GITHASH} rpm-extra || \
+    HDB_VERSION=${EXTRA_VERSION} \
+    HDB_RELEASE=${EXTRA_RELEASE} \
+    HDB_GITHASH=${GITHASH} rpm-extra || \
     abort "failed on 'make rpm' for '${STROM_VERSION}-${STROM_RELEASE}' on '${GITHASH}'"
 
 RPMFILES=`rpmspec --rpms -q ${SPECDIR}/heterodb-extra.spec`

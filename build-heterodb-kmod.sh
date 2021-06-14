@@ -26,9 +26,9 @@ test -z "$KMOD_VERSION" && abort "version is missing"
 test -z "$KMOD_RELEASE" && KMOD_RELEASE=1
 
 make -C "$GITDIR" \
-    STROM_VERSION=${KMOD_VERSION} \
-    STROM_RELEASE=${KMOD_RELEASE} \
-    STROM_GITHASH=${GITHASH} rpm || \
+    HDB_VERSION=${KMOD_VERSION} \
+    HDB_RELEASE=${KMOD_RELEASE} \
+    HDB_GITHASH=${GITHASH} rpm || \
     abort "failed on 'make rpm' for '${KMOD_VERSION}-${KMOD_RELEASE}' on '${GITHASH}'"
 
 RPMFILES=`rpmspec --rpms -q ${SPECDIR}/heterodb-kmod.spec`
