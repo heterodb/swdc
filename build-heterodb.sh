@@ -20,18 +20,23 @@ mkdir -p ${SRCDIR}
 rm -rf ${RPMDIR}/*
 
 set -- `echo "$VERSION" | tr '-' ' '`
-EXTRA_VERSION=$1
-EXTRA_RELEASE=$2
-test -z "$EXTRA_VERSION" && abort "version is missing"
-test -z "$EXTRA_RELEASE" && EXTRA_RELEASE=1
+KMOD_VERSION=$1
+KMOD_RELEASE=$2
+test -z "$KMOD_VERSION" && abort "version is missing"
+test -z "$KMOD_RELEASE" && KMOD_RELEASE=1
 
 make -C "$GITDIR" \
-    HDB_VERSION=${EXTRA_VERSION} \
-    HDB_RELEASE=${EXTRA_RELEASE} \
-    HDB_GITHASH=${GITHASH} rpm-extra || \
-    abort "failed on 'make rpm' for '${STROM_VERSION}-${STROM_RELEASE}' on '${GITHASH}'"
+    HDB_VERSION=${KMOD_VERSION} \
+    HDB_RELEASE=${KMOD_RELEASE} \
+    HDB_GITHASH=${GITHASH} rpm || \
+    abort "failed on 'make rpm' for '${KMOD_VERSION}-${KMOD_RELEASE}' on '${GITHASH}'"
 
-RPMFILES=`rpmspec --rpms -q ${SPECDIR}/heterodb-extra.spec`
+SPECFILES="${SPECDIR}/heterodb-extra.spec ${SPECDIR}/heterodb-kmod.spec"
+# if [ "${DISTRO}" = "rhel7" ]; then
+#   SPECFILES="$SPECFILES ${SPECDIR}/heterodb-kmod.spec"
+# fi
+
+RPMFILES=`rpmspec --rpms -q ${SPECFILES} --undefine=_debugsource_packages`
 for f in $RPMFILES;
 do
   test -e "$RPMDIR/${ARCH}/${f}.rpm" || abort "missing RPM file"
