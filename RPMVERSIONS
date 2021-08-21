@@ -18,6 +18,7 @@
 #nvme_strom	2.9-2		f875b78ad273dfdb53a1f33e76cad914528e634e
 heterodb	3.0-1		v3.0
 heterodb	3.0-3		21675fe0da845465b67f46be306972d532667ca3
+heterodb	3.1-1		v3.1
 
 #
 # pg_strom
@@ -40,4 +41,4 @@ heterodb	3.0-3		21675fe0da845465b67f46be306972d532667ca3
 pg_strom	3.0-1		v3.0
 pg_strom	3.0-2		c27fa4dd626621350d4bf1b9b415ff901c311026
 pg_strom	3.0-3		b83a2a01a3fdf01c66b04defeb493a3582439a3f
-
+pg_strom	3.1-1		v3.1
