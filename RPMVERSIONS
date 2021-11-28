@@ -20,6 +20,7 @@ heterodb	3.0-1		v3.0
 heterodb	3.0-3		21675fe0da845465b67f46be306972d532667ca3
 heterodb	3.1-1		v3.1
 heterodb	3.2-1		v3.2
+heterodb	3.3-2		117c29f198b0e616a485dd127626f98b9892fcbe
 
 #
 # pg_strom
