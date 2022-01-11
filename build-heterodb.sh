@@ -44,14 +44,12 @@ do
     ~/rpmsign.sh "$RPMDIR/${ARCH}/${f}.rpm" || abort "failed on rpmsign.sh"
   fi
   if [ "$INSTALL" -ne 0 ]; then
-    if echo "$f" | grep -q 'debuginfo'; then
-      DEST="docs/yum/${DISTRO}-debuginfo"
-    else
+    if ! echo "$f" | grep -q 'debuginfo'; then
       DEST="docs/yum/${DISTRO}-${ARCH}"
+      cp -f $RPMDIR/${ARCH}/${f}.rpm ${DEST} || exit 1
+      git add ${DEST}/${f}.rpm || exit 1
+      echo "installed '${f}' --> '${DEST}'"
     fi
-    cp -f $RPMDIR/${ARCH}/${f}.rpm ${DEST} || exit 1
-    git add ${DEST}/${f}.rpm || exit 1
-    echo "installed '${f}' --> '${DEST}'"
   fi
 done
 exit 0
