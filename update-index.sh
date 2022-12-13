@@ -42,7 +42,7 @@ do
 
   (echo "<li><b>`basename $dir`</b>"
    echo "  <ul>") >> $HTML
-  for x in `ls ${dir}*.rpm`
+  for x in `ls ${dir}*.rpm 2>/dev/null`
   do
     ALINK=`echo $x | sed -e 's|^docs/|./|g'`
     FNAME=`basename $x`
