@@ -53,6 +53,17 @@ do
 done
 echo "</ul>" >> $HTML
 
+# update Debian/Ubuntu files
+HTML="$TEMP/debian_packages.list"
+echo "<ul>" > $HTML
+for x in `ls -d docs/deb/*.deb`
+do
+  ALINK=`echo $x | sed -e 's|^docs/|./|g'`
+  FNAME=`basename $x`
+  echo "  <li><a href=\"$ALINK\">$FNAME</a></li>" >> $HTML
+done
+echo "</ul>" >> $HTML
+
 cpp -I $TEMP -E files/index.html.template | grep -v ^# > docs/index.html
 rm -rf $TEMP
 
