@@ -23,6 +23,8 @@ if echo "$DIST" | grep -q '^\.el7'; then
   DISTRO="rhel7"
 elif echo "$DIST" | grep -q '^\.el8'; then
   DISTRO="rhel8"
+elif echo "$DIST" | grep -q '^\.el9'; then
+  DISTRO="rhel9"
 else
   echo "unknown Linux distribution"
   exit 1
