@@ -1,5 +1,5 @@
 Name:      heterodb-swdc
-Version:   1.2
+Version:   1.3
 Release:   1%{?dist}
 Summary:   HeteroDB Software Distribution Center - Yum Repository Configuration
 Group:     System Environment/Base
