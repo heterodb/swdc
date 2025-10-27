@@ -7,8 +7,7 @@ cd `dirname $0`
 #--------------------------------
 mkdir -p ${SRCDIR}
 rm -rf ${RPMDIR}/*
-RPMFILE="`rpmspec --rpms -q files/heterodb-swdc.spec`.rpm"
-ARCH_LIST=x86_64
+RPMFILE="`rpmspec --queryformat='%{name}-%{version}-%{release}.%{arch}.rpm' -q files/heterodb-swdc.spec`"
 
 mkdir -p ${SRCDIR} && cp -f files/heterodb-swdc.repo \
 			    files/RPM-GPG-KEY-HETERODB ${SRCDIR}
