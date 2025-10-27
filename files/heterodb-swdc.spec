@@ -37,7 +37,9 @@ Center for RHEL/CentOS.
 %{_sysconfdir}/pki/rpm-gpg/*
 
 %changelog
-* Sun May 16 2021 KaiGai Kohei <kaigai@heterodb.com> - 1.2
+* Mon Oct 27 2025 KaiGai Kohei <kaigai@heterodb.com> - 1.3
+- Add SWDC definition for RHEL10
+* Wed May 16 2021 KaiGai Kohei <kaigai@heterodb.com> - 1.2
 - Remove post-script; not a job of RPM installation
 * Sun Nov 11 2020 KaiGai Kohei <kaigai@heterodb.com> - 1.1
 - Both of RHEL7/8 refers correct repository based on $releasever and $basearch
