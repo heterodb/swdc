@@ -1,12 +1,14 @@
 #!/bin/sh
 
-# update yum repository
-for d in docs/yum/rhel*-*/repodata;
-do
-  createrepo --simple-md-filenames --update `dirname $d`
-done
-
 DIST_LIST="rhel10 rhel9 rhel8"
+# update yum repository
+for dist in $DIST_LIST;
+do
+  for repo in docs/yum/${dist}-*/repodata;
+  do	
+    createrepo --simple-md-filenames --update `dirname $repo`
+  done
+done
 
 TEMP=`mktemp -d`
 # time to update
